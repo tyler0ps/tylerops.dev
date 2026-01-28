@@ -44,16 +44,6 @@ Senior DevOps Engineer with 8+ years of experience in software development and 5
 - AWS Bedrock, LangChain, LangGraph
 - Prompt Engineering
 
-## Education
-
-**Bachelor of Science in Computer Science**
-University of Greenwich (2015-2020)
-First Class Honours
-
-## Certifications
-
-- AWS Certified Solutions Architect - Associate (Feb 2024)
-
 ## Contact
 
 - **Email**: hoangthai9217@gmail.com
