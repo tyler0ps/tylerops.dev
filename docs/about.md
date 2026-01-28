@@ -59,4 +59,3 @@ First Class Honours
 - **Email**: hoangthai9217@gmail.com
 - **GitHub**: [github.com/tyler0ps](https://github.com/tyler0ps)
 - **LinkedIn**: [linkedin.com/in/tylerops](https://linkedin.com/in/tylerops)
-- **Website**: [oceancloud.click](https://oceancloud.click)
