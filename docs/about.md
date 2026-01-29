@@ -3,7 +3,7 @@ title: About Me
 description: Senior DevOps Engineer with 8+ years of experience in cloud infrastructure and platform engineering
 ---
 
-# Nong Hoang Thai (Tyler)
+# Thai Nong (Tyler)
 
 **Senior DevOps Engineer** | Hanoi, Vietnam
 
