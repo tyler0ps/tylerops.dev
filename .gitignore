@@ -30,3 +30,10 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Terraform under source, most likely for tutorial purposes
+source/**/.terraform/
+source/**/*.tfstate
+source/**/*.tfstate.*
+source/**/*.tfplan
+source/**/.terraform.lock.hcl
