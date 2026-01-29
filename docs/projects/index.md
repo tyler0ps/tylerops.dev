@@ -9,12 +9,12 @@ Practical, production-ready DevOps setups that you can learn from and deploy to 
 
 ## Projects
 
-### EKS + Karpenter
+### [EKS + Karpenter](/blog/posts/eks-karpenter-setup)
 
 Kubernetes autoscaling done right. Learn how to set up Amazon EKS with Karpenter for efficient, cost-optimized node provisioning.
 
-::: info Coming Soon
-Blog post and source code in progress.
+::: tip Available
+[Read the blog post](/blog/posts/eks-karpenter-setup) | Source code: TBD
 :::
 
 ---

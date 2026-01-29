@@ -2,25 +2,28 @@
 layout: home
 
 hero:
-  name: "Tyler"
-  text: "Senior DevOps Engineer"
-  tagline: Cloud Infrastructure & Platform Engineering
+  name: "DevOps Accelerator"
+  text: "Production-ready setups"
+  tagline: Pull. Deploy. Run. No more starting from scratch.
   actions:
     - theme: brand
+      text: View Projects
+      link: /projects/
+    - theme: alt
+      text: Read Blog
+      link: /blog/
+    - theme: alt
       text: About Me
       link: /about
-    - theme: alt
-      text: View Blog
-      link: /blog/
 
 features:
-  - icon: ☁️
-    title: Cloud Infrastructure
-    details: 8+ years of experience designing and implementing scalable cloud solutions on AWS, with expertise in EKS, EC2, RDS, and serverless architectures.
-  - icon: 🔧
-    title: Platform Engineering
-    details: Building developer platforms that enable teams to ship faster with Kubernetes, GitOps, and self-service infrastructure.
-  - icon: 🚀
-    title: DevOps & Automation
-    details: Infrastructure as Code with Terraform, CI/CD pipelines, and automated workflows that reduce toil and improve reliability.
+  - icon: 📦
+    title: Ready to Use
+    details: Complete Terraform modules and Kubernetes manifests. Clone the repo, configure your variables, and deploy.
+  - icon: 🏗️
+    title: Battle-tested Patterns
+    details: Real-world setups used in production. EKS, Karpenter, ArgoCD, observability stacks, and more.
+  - icon: 📖
+    title: Learn by Doing
+    details: Each project comes with detailed guides explaining the why, not just the how.
 ---

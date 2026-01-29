@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'OceanCloud',
-  description: 'Senior DevOps Engineer - Cloud Infrastructure & Platform Engineering',
+  title: 'DevOps Accelerator',
+  description: 'Production-ready DevOps setups. Pull and run.',
 
   // Clean URLs without .html extension
   cleanUrls: true,
@@ -15,15 +15,15 @@ export default defineConfig({
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['meta', { name: 'theme-color', content: '#3eaf7c' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:site_name', content: 'OceanCloud' }],
-    ['meta', { property: 'og:title', content: 'Tyler - Senior DevOps Engineer' }],
-    ['meta', { property: 'og:description', content: 'Cloud Infrastructure & Platform Engineering' }],
-    ['meta', { property: 'og:url', content: 'https://oceancloud.click' }],
+    ['meta', { property: 'og:site_name', content: 'DevOps Accelerator' }],
+    ['meta', { property: 'og:title', content: 'DevOps Accelerator - Production-ready DevOps setups' }],
+    ['meta', { property: 'og:description', content: 'Production-ready DevOps setups. Pull and run.' }],
+    ['meta', { property: 'og:url', content: 'https://tylerops.dev' }],
   ],
 
   // Theme configuration
   themeConfig: {
-    siteTitle: 'OceanCloud',
+    siteTitle: 'DevOps Accelerator',
 
     // Navigation bar
     nav: [
@@ -40,6 +40,7 @@ export default defineConfig({
           text: 'Blog Posts',
           items: [
             { text: 'All Posts', link: '/blog/' },
+            { text: 'EKS + Karpenter', link: '/blog/posts/eks-karpenter-setup' },
           ]
         }
       ],
@@ -79,7 +80,7 @@ export default defineConfig({
 
   // Sitemap generation
   sitemap: {
-    hostname: 'https://oceancloud.click'
+    hostname: 'https://tylerops.dev'
   },
 
   // Markdown configuration
