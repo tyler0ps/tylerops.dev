@@ -5,36 +5,17 @@ description: Open source projects and contributions
 
 # Projects
 
-A collection of projects I've worked on and contributed to.
+A collection of open source projects and side projects I'm working on.
 
 ## Open Source
 
-### Infrastructure & DevOps
-
 *Coming soon...*
 
-Projects related to:
+Areas I'm exploring:
 - Terraform modules
-- Kubernetes operators
-- CI/CD tools
+- Kubernetes tooling
+- CI/CD automation
 - Platform engineering utilities
-
-## Professional Experience
-
-### Deputy
-**Platform Engineer** (2025 - Present)
-
-Building and maintaining the platform infrastructure for Deputy's SaaS workforce management solution.
-
-### CIMB Thai Bank
-**Senior Software Engineer** (2022 - 2025)
-
-Mobile application development and DevOps for CIMB Thai Bank's digital banking platform.
-
-### TrueMoney Vietnam
-**Software Engineer** (2018 - 2021)
-
-Fintech solutions and payment gateway development.
 
 ---
 

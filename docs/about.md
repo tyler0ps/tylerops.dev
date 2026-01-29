@@ -5,47 +5,24 @@ description: Senior DevOps Engineer with 8+ years of experience in cloud infrast
 
 # Nong Hoang Thai (Tyler)
 
-**Senior DevOps Engineer** | Ha Noi City, Vietnam
+**Senior DevOps Engineer** | Hanoi, Vietnam
 
-## Summary
+## Hey there!
 
-Senior DevOps Engineer with 8+ years of experience in software development and 5+ years focused on cloud infrastructure and platform engineering. Passionate about building scalable, reliable systems and enabling development teams through automation and self-service platforms.
+I'm a DevOps Engineer with 8+ years in software development, spending the last 5+ years deep in cloud infrastructure, platform engineering, and CI/CD automation.
 
-## Skills
+My background in backend systems and mobile development gives me a unique perspective on bridging the gap between Dev and Ops. I'm passionate about building reliable infrastructure, exploring emerging technologies, and continuously pushing my limits.
 
-### Cloud Platforms
-- **AWS**: EKS, ECR, EC2, RDS, VPC, ALB, S3, CloudWatch, Bedrock, OpenSearch, ACM
-- **OpenShift**: ROSA (Red Hat OpenShift on AWS)
+## Certifications
 
-### Container & Orchestration
-- Kubernetes, Docker, containerd
-- Helm, Kustomize, Karpenter
+**AWS Certified Solutions Architect - Associate** (February 2024)
+[Verify Credential](https://cp.certmetrics.com/amazon/en/public/verify/credential/9ab9bc99761b484e990d005e735f6671)
 
-### Infrastructure as Code
-- Terraform, Taskfile, Makefile
-- Bash scripting
+## Beyond Work
 
-### CI/CD
-- GitHub Actions, Jenkins, Fastlane
-- ArgoCD, Flux CD
+Endurance sports enthusiast - completed a half marathon (21km) in under 2 hours and occasionally swims 2km. I believe consistency is a journey, not a destination.
 
-### Security
-- SSO, IAM Identity Center
-- GitHub OIDC, IRSA
+## Let's Connect
 
-### Observability
-- Datadog, LGTM Stack, CloudWatch
-
-### Languages
-- Go, Java, JavaScript/Node.js, Python
-- Swift, Dart, Kotlin, Bash, Groovy
-
-### AI/LLM
-- AWS Bedrock, LangChain, LangGraph
-- Prompt Engineering
-
-## Contact
-
-- **Email**: hoangthai9217@gmail.com
 - **GitHub**: [github.com/tyler0ps](https://github.com/tyler0ps)
-- **LinkedIn**: [linkedin.com/in/tylerops](https://linkedin.com/in/tylerops)
+- **LinkedIn**: [linkedin.com/in/tylerops](https://linkedin.com/in/tylerops) — _detailed work experience_

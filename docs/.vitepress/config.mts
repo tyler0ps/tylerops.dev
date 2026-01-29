@@ -62,7 +62,7 @@ export default defineConfig({
     // Footer
     footer: {
       message: 'Built with VitePress',
-      copyright: 'Copyright 2025 Nong Hoang Thai (Tyler)'
+      copyright: 'Copyright 2025 tylerops'
     },
 
     // Search
