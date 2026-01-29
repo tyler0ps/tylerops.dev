@@ -1,6 +1,6 @@
 # tylerops.dev
 
-Personal website and blog built with VitePress, hosted on AWS.
+Source code for [https://tylerops.dev](https://tylerops.dev) - Personal website and blog built with VitePress, hosted on AWS.
 
 ## Tech Stack
 
