@@ -14,7 +14,7 @@ Practical, production-ready DevOps setups that you can learn from and deploy to 
 Kubernetes autoscaling done right. Learn how to set up Amazon EKS with Karpenter for efficient, cost-optimized node provisioning.
 
 ::: tip Available
-[Read the blog post](/blog/posts/eks-karpenter-setup) | Source code: TBD
+[Read the blog post](/blog/posts/eks-karpenter-setup) | [Source code](https://github.com/tyler0ps/tylerops.dev/tree/main/source/eks-karpenter)
 :::
 
 ---

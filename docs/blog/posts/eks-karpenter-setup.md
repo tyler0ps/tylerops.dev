@@ -334,9 +334,9 @@ terraform destroy
 
 ## Source Code
 
-The complete Terraform code will be available on GitHub soon.
+The complete Terraform code is available on GitHub:
 
-*TBD*
+**[https://github.com/tyler0ps/tylerops.dev/tree/main/source/eks-karpenter](https://github.com/tyler0ps/tylerops.dev/tree/main/source/eks-karpenter)**
 
 ---
 
