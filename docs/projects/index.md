@@ -1,21 +1,41 @@
 ---
-title: Projects
-description: Open source projects and contributions
+title: DevOps Materials
+description: Production-ready DevOps setups for various cloud technologies
 ---
 
-# Projects
+# DevOps Materials
 
-A collection of open source projects and side projects I'm working on.
+Practical, production-ready DevOps setups that you can learn from and deploy to the cloud. Each project includes detailed documentation, Terraform/Kubernetes manifests, and step-by-step guides.
 
-## Open Source
+## Projects
 
-*Coming soon...*
+### EKS + Karpenter
 
-Areas I'm exploring:
-- Terraform modules
-- Kubernetes tooling
-- CI/CD automation
-- Platform engineering utilities
+Kubernetes autoscaling done right. Learn how to set up Amazon EKS with Karpenter for efficient, cost-optimized node provisioning.
+
+::: info Coming Soon
+Blog post and source code in progress.
+:::
+
+---
+
+### EKS + ArgoCD
+
+GitOps workflow for Kubernetes. Deploy and manage applications on EKS using ArgoCD for declarative, version-controlled deployments.
+
+::: info Coming Soon
+Blog post and source code in progress.
+:::
+
+---
+
+### EKS + LGTM Stack
+
+Full observability stack on Kubernetes. Set up Loki, Grafana, Tempo, and Mimir for logs, metrics, and traces on Amazon EKS.
+
+::: info Coming Soon
+Blog post and source code in progress.
+:::
 
 ---
 
