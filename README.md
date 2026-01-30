@@ -49,13 +49,15 @@ Push to `main` branch with changes in `docs/**` triggers automatic deployment vi
 ## Project Structure
 
 ```
-├── docs/                    # VitePress content
+├── docs/                   # VitePress content
 │   ├── .vitepress/         # VitePress config
 │   ├── index.md            # Homepage
 │   ├── about.md            # About page
 │   ├── blog/               # Blog posts
 │   └── projects/           # Projects page
-├── terraform/              # Infrastructure as Code
+├── source/                 # DevOps materials (Terraform/K8s code)
+│   └── eks-karpenter/      # EKS + Karpenter setup
+├── terraform/              # Website infrastructure (S3, CloudFront, Route53)
 └── .github/workflows/      # CI/CD pipelines
 ```
 
