@@ -36,3 +36,23 @@ Full observability stack on Kubernetes. Set up Loki, Grafana, Tempo, and Mimir f
 ::: info Coming Soon
 Blog post and source code in progress.
 :::
+
+---
+
+### Private AWS Resources with VPN
+
+Secure access to private AWS resources. Set up a VPN solution to safely connect to resources in private subnets without exposing them to the public internet.
+
+::: info Coming Soon
+Blog post and source code in progress.
+:::
+
+---
+
+### GitHub Actions for Microservices Monorepo
+
+Complete CI/CD pipeline for microservices. Test, build, push, and release workflows using release-please for multiple environments in a monorepo setup.
+
+::: info Coming Soon
+Blog post and source code in progress.
+:::
