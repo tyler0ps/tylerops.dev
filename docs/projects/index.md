@@ -7,7 +7,7 @@ description: DevOps projects and learning resources
 
 ## [DevOps Materials](/projects/devops-materials)
 
-Production-ready DevOps setups for various cloud technologies. Includes EKS + Karpenter, ArgoCD, LGTM Stack, and more.
+Working DevOps setups for various cloud technologies. Includes EKS + Karpenter, ArgoCD, LGTM Stack, and more. Use as reference implementations.
 
 ## [DevOps Practices](/projects/devops-practices)
 

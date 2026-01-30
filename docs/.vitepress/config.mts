@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'DevOps Accelerator',
-  description: 'Production-ready DevOps setups. Pull and run.',
+  description: 'Working DevOps setups and reference implementations.',
 
   // Clean URLs without .html extension
   cleanUrls: true,
@@ -16,8 +16,8 @@ export default defineConfig({
     ['meta', { name: 'theme-color', content: '#3eaf7c' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'DevOps Accelerator' }],
-    ['meta', { property: 'og:title', content: 'DevOps Accelerator - Production-ready DevOps setups' }],
-    ['meta', { property: 'og:description', content: 'Production-ready DevOps setups. Pull and run.' }],
+    ['meta', { property: 'og:title', content: 'DevOps Accelerator - Working DevOps setups' }],
+    ['meta', { property: 'og:description', content: 'Working DevOps setups and reference implementations.' }],
     ['meta', { property: 'og:url', content: 'https://tylerops.dev' }],
   ],
 

@@ -1,11 +1,11 @@
 ---
 title: DevOps Materials
-description: Production-ready DevOps setups for various cloud technologies
+description: Working DevOps setups and reference implementations
 ---
 
 # DevOps Materials
 
-Practical, production-ready DevOps setups that you can learn from and deploy to the cloud. Each project includes detailed documentation, Terraform/Kubernetes manifests, and step-by-step guides.
+Practical DevOps setups that you can learn from and use as starting points. Each project includes documentation, Terraform/Kubernetes manifests, and step-by-step guides. Adapt and configure for your own needs.
 
 ## Projects
 

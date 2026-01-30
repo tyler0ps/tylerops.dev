@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: "DevOps Accelerator"
-  text: "Production-ready setups"
-  tagline: Pull. Deploy. Run. No more starting from scratch.
+  text: "Working DevOps setups"
+  tagline: Clone. Configure. Learn. Reference implementations to kickstart your projects.
   actions:
     - theme: brand
       text: View Projects
@@ -18,11 +18,11 @@ hero:
 
 features:
   - icon: 📦
-    title: Ready to Use
-    details: Complete Terraform modules and Kubernetes manifests. Clone the repo, configure your variables, and deploy.
-  - icon: 🏗️
-    title: Battle-tested Patterns
-    details: Real-world setups used in production. EKS, Karpenter, ArgoCD, observability stacks, and more.
+    title: Working Examples
+    details: Terraform modules and Kubernetes manifests you can run locally or in the cloud. Use as starting points for your own setups.
+  - icon: 🔧
+    title: Practical Patterns
+    details: Real configurations for EKS, Karpenter, ArgoCD, observability stacks, and more. Adapt them to your needs.
   - icon: 📖
     title: Learn by Doing
     details: Each project comes with detailed guides explaining the why, not just the how.
