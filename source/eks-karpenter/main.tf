@@ -148,6 +148,11 @@ module "eks" {
         }
       })
     }
+
+    # EBS CSI Driver - For persistent volumes
+    aws-ebs-csi-driver = {
+      addon_version = "v1.55.0-eksbuild.1"
+    }
   }
 
   tags = local.tags

@@ -54,6 +54,14 @@ output "karpenter_queue_name" {
 }
 
 # ============================================================
+# EBS CSI DRIVER INFORMATION
+# ============================================================
+output "ebs_csi_pod_identity_role_arn" {
+  description = "ARN of IAM role for EBS CSI driver (Pod Identity)"
+  value       = module.ebs_csi_pod_identity.iam_role_arn
+}
+
+# ============================================================
 # KUBECONFIG COMMAND
 # ============================================================
 output "configure_kubectl" {
