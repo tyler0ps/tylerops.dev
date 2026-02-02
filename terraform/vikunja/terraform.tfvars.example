@@ -1,0 +1,4 @@
+# Copy this file to terraform.tfvars and fill in the values
+
+# Generate a random JWT secret: openssl rand -base64 32
+vikunja_jwt_secret = "your-secret-here"
