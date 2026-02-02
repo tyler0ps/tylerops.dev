@@ -1,0 +1,8 @@
+# AWS Region
+aws_region = "ap-southeast-1"
+
+# Domain for Plane
+domain_name = "capitalplace.tylerops.dev"
+
+# EC2 Instance type (minimum t3.medium for Plane)
+instance_type = "t4g.medium"
