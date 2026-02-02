@@ -13,6 +13,9 @@ hero:
       text: Read Blog
       link: /blog/
     - theme: alt
+      text: Workplace
+      link: https://capitalplace.tylerops.dev
+    - theme: alt
       text: About Me
       link: /about
 
@@ -26,4 +29,7 @@ features:
   - icon: 📖
     title: Learn by Doing
     details: Each project comes with detailed guides explaining the why, not just the how.
+  - icon: 📋
+    title: Workplace
+    details: Simple project management and documentation tool. Perfect for personal use or small teams.
 ---
