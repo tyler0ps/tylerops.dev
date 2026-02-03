@@ -20,6 +20,7 @@ variable "instance_types" {
   description = "List of instance types to try (in order) when capacity is unavailable"
   type        = list(string)
   default = [
+    "t4g.small",  # Graviton2, 1 vCPU, 2GB
     "t4g.medium", # Graviton2, 2 vCPU, 4GB
     "m6g.medium", # Graviton2, 1 vCPU, 4GB
     "m7g.medium", # Graviton3, 1 vCPU, 4GB
