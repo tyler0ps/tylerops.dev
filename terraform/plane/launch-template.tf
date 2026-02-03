@@ -8,7 +8,7 @@ resource "aws_launch_template" "plane" {
   description = "Launch template for Plane CE spot instances"
 
   image_id      = data.aws_ami.plane_custom.id
-  instance_type = var.instance_type
+  instance_type = var.instance_type # Default, Lambda overrides with var.instance_types list
 
   iam_instance_profile {
     name = aws_iam_instance_profile.plane.name

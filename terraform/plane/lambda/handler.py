@@ -29,6 +29,7 @@ LAUNCH_TEMPLATE_ID = os.environ.get("LAUNCH_TEMPLATE_ID")
 EBS_VOLUME_ID = os.environ.get("EBS_VOLUME_ID")
 EIP_ALLOCATION_ID = os.environ.get("EIP_ALLOCATION_ID")
 SUBNET_ID = os.environ.get("SUBNET_ID")
+INSTANCE_TYPES = os.environ.get("INSTANCE_TYPES", "t4g.medium").split(",")
 
 # Constants
 MANAGED_BY_TAG = "plane-lambda"
@@ -143,35 +144,50 @@ def graceful_shutdown(instance_id):
 
 
 def create_instance():
-    """Create new spot instance from launch template."""
-    logger.info("Creating new spot instance from launch template")
+    """Create new spot instance from launch template, trying multiple instance types."""
+    logger.info(f"Creating new spot instance, will try types: {INSTANCE_TYPES}")
 
-    try:
-        response = ec2.run_instances(
-            LaunchTemplate={"LaunchTemplateId": LAUNCH_TEMPLATE_ID},
-            MinCount=1,
-            MaxCount=1,
-        )
+    last_error = None
 
-        instance_id = response["Instances"][0]["InstanceId"]
-        logger.info(f"Created instance: {instance_id}")
+    for instance_type in INSTANCE_TYPES:
+        try:
+            logger.info(f"Trying instance type: {instance_type}")
+            response = ec2.run_instances(
+                LaunchTemplate={"LaunchTemplateId": LAUNCH_TEMPLATE_ID},
+                InstanceType=instance_type,  # Override launch template
+                MinCount=1,
+                MaxCount=1,
+            )
 
-        # Wait for instance to be running
-        if not wait_for_instance_state(instance_id, "running"):
-            raise Exception(f"Instance {instance_id} failed to reach running state")
+            instance_id = response["Instances"][0]["InstanceId"]
+            logger.info(f"Created instance: {instance_id} (type: {instance_type})")
 
-        # Attach EBS volume
-        attach_ebs_volume(instance_id)
+            # Wait for instance to be running
+            if not wait_for_instance_state(instance_id, "running"):
+                raise Exception(f"Instance {instance_id} failed to reach running state")
 
-        # Associate Elastic IP
-        associate_eip(instance_id)
+            # Attach EBS volume
+            attach_ebs_volume(instance_id)
 
-        logger.info(f"Instance {instance_id} fully configured")
-        return instance_id
+            # Associate Elastic IP
+            associate_eip(instance_id)
 
-    except ClientError as e:
-        logger.error(f"Error creating instance: {e}")
-        raise
+            logger.info(f"Instance {instance_id} fully configured")
+            return instance_id
+
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code in ["InsufficientInstanceCapacity", "SpotMaxPriceTooLow"]:
+                logger.warning(f"No capacity for {instance_type}: {e}")
+                last_error = e
+                continue  # Try next instance type
+            else:
+                logger.error(f"Error creating instance: {e}")
+                raise
+
+    # All instance types failed
+    logger.error(f"All instance types exhausted: {INSTANCE_TYPES}")
+    raise last_error or Exception("Failed to create instance with any instance type")
 
 
 def attach_ebs_volume(instance_id):

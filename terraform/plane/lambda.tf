@@ -29,6 +29,7 @@ resource "aws_lambda_function" "plane_manager" {
       EBS_VOLUME_ID      = aws_ebs_volume.plane_data.id
       EIP_ALLOCATION_ID  = aws_eip.plane.id
       SUBNET_ID          = aws_subnet.public.id
+      INSTANCE_TYPES     = join(",", var.instance_types)
     }
   }
 
