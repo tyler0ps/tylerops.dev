@@ -1,8 +1,9 @@
 # =============================================================================
-# EC2 Instance for Plane
+# EC2 Resources for Plane
+# NOTE: Instance is managed by Lambda, not Terraform
 # =============================================================================
 
-# Get latest Amazon Linux 2023 AMI
+# Get latest Amazon Linux 2023 AMI (for reference only)
 data "aws_ami" "amazon_linux_2023" {
   most_recent = true
   owners      = ["amazon"]
@@ -18,39 +19,50 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
-# EC2 Instance
-resource "aws_instance" "plane" {
-  ami                    = data.aws_ami.amazon_linux_2023.id
-  instance_type          = var.instance_type
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.plane.id]
-  iam_instance_profile   = aws_iam_instance_profile.plane.name
+# =============================================================================
+# REMOVED: aws_instance.plane
+# Instance is now managed by Lambda via Launch Template
+# Lambda creates/terminates instances based on schedule and spot interruptions
+# Keep this code for reference only, not applied by Terraform
+# =============================================================================
 
-  root_block_device {
-    volume_size           = 30
-    volume_type           = "gp3"
-    encrypted             = true
-    delete_on_termination = true # Data is on separate EBS volume
+# EC2 Instance - Used to create AMI
+# resource "aws_instance" "plane" {
+#   ami                    = var.use_custom_ami ? data.aws_ami.plane_custom.id : data.aws_ami.amazon_linux_2023.id
+#   instance_type          = var.instance_type
+#   subnet_id              = aws_subnet.public.id
+#   vpc_security_group_ids = [aws_security_group.plane.id]
+#   iam_instance_profile   = aws_iam_instance_profile.plane.name
 
-    tags = {
-      Name = "plane-root-volume"
-    }
-  }
+#   root_block_device {
+#     volume_size           = 30
+#     volume_type           = "gp3"
+#     encrypted             = true
+#     delete_on_termination = true # Data is on separate EBS volume
 
-  user_data = templatefile("${path.module}/templates/user-data.sh", {
-    domain = var.domain_name
-  })
+#     tags = {
+#       Name = "plane-root-volume"
+#     }
+#   }
 
-  tags = {
-    Name = "plane"
-  }
+#   user_data = var.use_custom_ami ? templatefile("${path.module}/templates/user-data-ami.sh", {
+#     domain = var.domain_name
+#   }) : templatefile("${path.module}/templates/user-data.sh", {
+#     domain = var.domain_name
+#   })
 
-  lifecycle {
-    ignore_changes = [ami] # Don't recreate on AMI updates
-  }
-}
+#   tags = {
+#     Name = "plane"
+#   }
+
+#   lifecycle {
+#     ignore_changes = [ami] # Don't recreate on AMI updates
+#   }
+# }
+
 
 # Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
+# This is managed by Terraform and attached by Lambda to new instances
 resource "aws_ebs_volume" "plane_data" {
   availability_zone = "${var.aws_region}a"
   size              = 30
@@ -66,14 +78,13 @@ resource "aws_ebs_volume" "plane_data" {
   }
 }
 
-# Attach data volume to EC2
-resource "aws_volume_attachment" "plane_data" {
-  device_name = "/dev/xvdf"
-  volume_id   = aws_ebs_volume.plane_data.id
-  instance_id = aws_instance.plane.id
-}
+# =============================================================================
+# REMOVED: aws_volume_attachment.plane_data
+# Lambda handles volume attachment after instance creation
+# =============================================================================
 
-# Elastic IP
+# Elastic IP (static, Terraform managed)
+# Lambda associates this to new instances
 resource "aws_eip" "plane" {
   domain = "vpc"
 
@@ -82,8 +93,20 @@ resource "aws_eip" "plane" {
   }
 }
 
-# Associate EIP with EC2
-resource "aws_eip_association" "plane" {
-  instance_id   = aws_instance.plane.id
-  allocation_id = aws_eip.plane.id
+# =============================================================================
+# REMOVED: aws_eip_association.plane
+# Lambda handles EIP association after instance creation
+# =============================================================================
+
+# Data source to find current Lambda-managed instance (for outputs)
+data "aws_instances" "plane_managed" {
+  filter {
+    name   = "tag:ManagedBy"
+    values = ["plane-lambda"]
+  }
+
+  filter {
+    name   = "instance-state-name"
+    values = ["pending", "running", "stopping", "stopped"]
+  }
 }
