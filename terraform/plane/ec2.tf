@@ -20,7 +20,7 @@ data "aws_ami" "amazon_linux_2023" {
 
 # EC2 Instance
 resource "aws_instance" "plane" {
-  ami                    = data.aws_ami.amazon_linux_2023.id
+  ami                    = var.use_custom_ami ? data.aws_ami.plane_custom.id : data.aws_ami.amazon_linux_2023.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.plane.id]
@@ -37,7 +37,9 @@ resource "aws_instance" "plane" {
     }
   }
 
-  user_data = templatefile("${path.module}/templates/user-data.sh", {
+  user_data = var.use_custom_ami ? templatefile("${path.module}/templates/user-data-ami.sh", {
+    domain = var.domain_name
+  }) : templatefile("${path.module}/templates/user-data.sh", {
     domain = var.domain_name
   })
 

@@ -17,3 +17,13 @@ output "instance_id" {
   description = "EC2 instance ID"
   value       = aws_instance.plane.id
 }
+
+output "ami_id" {
+  description = "AMI ID used for the instance"
+  value       = var.use_custom_ami ? data.aws_ami.plane_custom.id : data.aws_ami.amazon_linux_2023.id
+}
+
+output "custom_ami_id" {
+  description = "Custom Plane AMI ID (if available)"
+  value       = try(data.aws_ami.plane_custom.id, "No custom AMI found")
+}
