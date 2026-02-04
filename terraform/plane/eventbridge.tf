@@ -2,11 +2,11 @@
 # EventBridge Rules for Plane Instance Scheduling
 # =============================================================================
 
-# Schedule: Start instance at 7 AM SGT (23:00 UTC previous day) every day
+# Schedule: Start instance at 7 AM ICT (00:00 UTC) every day
 resource "aws_cloudwatch_event_rule" "schedule_start" {
   name                = "plane-schedule-start"
-  description         = "Start Plane instance at 7 AM SGT every day"
-  schedule_expression = "cron(0 23 ? * * *)"
+  description         = "Start Plane instance at 7 AM ICT every day"
+  schedule_expression = "cron(0 0 ? * * *)"
 
   tags = {
     Name = "plane-schedule-start"
@@ -23,11 +23,11 @@ resource "aws_cloudwatch_event_target" "schedule_start" {
   })
 }
 
-# Schedule: Stop instance at 9 PM SGT (13:00 UTC) every day
+# Schedule: Stop instance at 9 PM ICT (14:00 UTC) every day
 resource "aws_cloudwatch_event_rule" "schedule_stop" {
   name                = "plane-schedule-stop"
-  description         = "Stop Plane instance at 9 PM SGT every day"
-  schedule_expression = "cron(0 13 ? * * *)"
+  description         = "Stop Plane instance at 9 PM ICT every day"
+  schedule_expression = "cron(0 14 ? * * *)"
 
   tags = {
     Name = "plane-schedule-stop"
