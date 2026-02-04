@@ -23,11 +23,11 @@ resource "aws_cloudwatch_event_target" "schedule_start" {
   })
 }
 
-# Schedule: Stop instance at 9 PM ICT (14:00 UTC) every day
+# Schedule: Stop instance at 10 PM ICT (15:00 UTC) every day
 resource "aws_cloudwatch_event_rule" "schedule_stop" {
   name                = "plane-schedule-stop"
-  description         = "Stop Plane instance at 9 PM ICT every day"
-  schedule_expression = "cron(0 14 ? * * *)"
+  description         = "Stop Plane instance at 10 PM ICT every day"
+  schedule_expression = "cron(0 15 ? * * *)"
 
   tags = {
     Name = "plane-schedule-stop"
