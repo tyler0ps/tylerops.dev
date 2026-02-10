@@ -13,7 +13,7 @@ variable "domain_name" {
 variable "instance_type" {
   description = "EC2 instance type for Plane"
   type        = string
-  default     = "t4g.small"
+  default     = "t4g.large"
 }
 
 variable "db_password" {
@@ -41,3 +41,4 @@ variable "public_subnet_cidr" {
   type        = string
   default     = "10.5.1.0/24"
 }
+

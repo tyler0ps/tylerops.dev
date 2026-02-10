@@ -63,3 +63,20 @@ aws ec2-instance-connect send-ssh-public-key \
 ssh -o StrictHostKeyChecking=no ec2-user@${aws_eip.plane.public_ip}
 EOT
 }
+
+output "plane_s3_access_key" {
+  description = "S3 access key for Plane"
+  value       = aws_iam_access_key.plane_s3.id
+  sensitive   = true
+}
+
+output "plane_s3_secret_key" {
+  description = "S3 secret key for Plane"
+  value       = aws_iam_access_key.plane_s3.secret
+  sensitive   = true
+}
+
+output "plane_s3_endpoint" {
+  description = "S3 endpoint URL for Plane"
+  value       = "https://s3.${var.aws_region}.amazonaws.com"
+}

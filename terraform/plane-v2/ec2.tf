@@ -2,19 +2,19 @@
 # Plane EC2 Instance (Stateless Compute)
 # =============================================================================
 
-# Amazon Linux 2023 ARM64 AMI
-data "aws_ami" "amazon_linux" {
+# Plane Commercial AMI (baked)
+data "aws_ami" "plane" {
   most_recent = true
-  owners      = ["amazon"]
+  owners      = ["self"]
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-arm64"]
+    values = ["plane-commercial-*"]
   }
 
   filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
+    name   = "architecture"
+    values = ["arm64"]
   }
 }
 
@@ -64,27 +64,33 @@ resource "aws_ebs_volume" "plane_data" {
   }
 }
 
-# Plane EC2 Instance (Stateless - only app containers)
+# Plane EC2 Spot Instance (Stateless - only app containers)
 resource "aws_instance" "plane" {
-  ami                    = data.aws_ami.amazon_linux.id
+  ami                    = data.aws_ami.plane.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.plane.id]
   iam_instance_profile   = aws_iam_instance_profile.plane.name
 
-  user_data = base64encode(templatefile("${path.module}/templates/user-data.sh", {
-    domain      = var.domain_name
-    db_host     = module.data.db_dns_name
-    db_name     = "plane"
-    db_user     = "plane"
-    db_password = var.db_password
-    redis_host  = module.data.redis_dns_name
-    mq_host     = module.data.mq_dns_name
-    mq_user     = "plane"
-    mq_password = var.mq_password
-    mq_vhost    = "plane"
-    s3_bucket   = aws_s3_bucket.uploads.bucket
-    s3_region   = var.aws_region
+  instance_market_options {
+    market_type = "spot"
+  }
+
+  user_data = base64encode(templatefile("${path.module}/templates/user-data-ami.sh", {
+    domain        = var.domain_name
+    db_host       = module.data.db_dns_name
+    db_name       = "plane"
+    db_user       = "plane"
+    db_password   = var.db_password
+    redis_host    = module.data.redis_dns_name
+    mq_host       = module.data.mq_dns_name
+    mq_user       = "plane"
+    mq_password   = var.mq_password
+    mq_vhost      = "plane"
+    s3_bucket     = aws_s3_bucket.uploads.bucket
+    s3_region     = var.aws_region
+    s3_access_key = aws_iam_access_key.plane_s3.id
+    s3_secret_key = aws_iam_access_key.plane_s3.secret
   }))
 
   root_block_device {

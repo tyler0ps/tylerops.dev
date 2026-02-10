@@ -57,3 +57,31 @@ resource "aws_iam_instance_profile" "plane" {
   name = "plane-v2-instance-profile"
   role = aws_iam_role.plane.name
 }
+
+# =============================================================================
+# IAM User for Plane S3 (Plane requires access keys)
+# =============================================================================
+
+resource "aws_iam_user" "plane_s3" {
+  name = "plane-v2-s3-user"
+}
+
+resource "aws_iam_access_key" "plane_s3" {
+  user = aws_iam_user.plane_s3.name
+}
+
+resource "aws_iam_user_policy" "plane_s3" {
+  name = "plane-s3-access"
+  user = aws_iam_user.plane_s3.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject"]
+        Resource = "${aws_s3_bucket.uploads.arn}/*"
+      }
+    ]
+  })
+}
