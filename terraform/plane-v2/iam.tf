@@ -52,6 +52,46 @@ resource "aws_iam_role_policy" "s3_access" {
   })
 }
 
+# EC2 self-attach policy (EIP + EBS for ASG spot recovery)
+resource "aws_iam_role_policy" "ec2_self_attach" {
+  name = "plane-v2-ec2-self-attach"
+  role = aws_iam_role.plane.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AssociateEIP"
+        Effect = "Allow"
+        Action = [
+          "ec2:AssociateAddress",
+          "ec2:DisassociateAddress"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AttachEBS"
+        Effect = "Allow"
+        Action = [
+          "ec2:AttachVolume",
+          "ec2:DetachVolume"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "DescribeEC2"
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeVolumes",
+          "ec2:DescribeInstances",
+          "ec2:DescribeAddresses"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # Instance profile
 resource "aws_iam_instance_profile" "plane" {
   name = "plane-v2-instance-profile"

@@ -8,9 +8,14 @@ output "plane_url" {
   value       = "https://${var.domain_name}"
 }
 
-output "plane_instance_id" {
-  description = "Plane EC2 instance ID"
-  value       = aws_instance.plane.id
+output "plane_asg_name" {
+  description = "Plane Auto Scaling Group name"
+  value       = aws_autoscaling_group.plane.name
+}
+
+output "plane_launch_template_id" {
+  description = "Plane Launch Template ID"
+  value       = aws_launch_template.plane.id
 }
 
 output "data_instance_id" {
@@ -39,8 +44,14 @@ output "s3_bucket_name" {
 }
 
 output "ssm_connect_plane" {
-  description = "SSM command to connect to Plane instance"
-  value       = "aws ssm start-session --target ${aws_instance.plane.id}"
+  description = "SSM command to connect to Plane instance (get instance ID first)"
+  value       = <<-EOT
+# Get current instance ID from ASG:
+INSTANCE_ID=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${aws_autoscaling_group.plane.name} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
+
+# Then connect:
+aws ssm start-session --target $INSTANCE_ID
+EOT
 }
 
 output "ssm_connect_data" {
@@ -51,16 +62,12 @@ output "ssm_connect_data" {
 output "ssh_connect_plane" {
   description = "SSH command using EC2 Instance Connect"
   value       = <<-EOT
-# Option 1: Using EC2 Instance Connect CLI (recommended)
-aws ec2-instance-connect ssh --instance-id ${aws_instance.plane.id} --os-user ec2-user
+# EIP is always the same, just SSH directly:
+ssh ec2-user@${aws_eip.plane.public_ip}
 
-# Option 2: Manual method (send key then SSH)
-aws ec2-instance-connect send-ssh-public-key \
-  --instance-id ${aws_instance.plane.id} \
-  --instance-os-user ec2-user \
-  --ssh-public-key file://~/.ssh/id_rsa.pub \
-  --availability-zone ${var.aws_region}a && \
-ssh -o StrictHostKeyChecking=no ec2-user@${aws_eip.plane.public_ip}
+# Or using EC2 Instance Connect:
+INSTANCE_ID=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${aws_autoscaling_group.plane.name} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
+aws ec2-instance-connect ssh --instance-id $INSTANCE_ID --os-user ec2-user
 EOT
 }
 
