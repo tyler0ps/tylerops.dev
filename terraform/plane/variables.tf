@@ -28,3 +28,16 @@ variable "instance_types" {
     "c6g.large",  # Graviton2, 2 vCPU, 4GB
   ]
 }
+
+variable "telegram_bot_token" {
+  description = "Telegram bot token from BotFather"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "telegram_chat_id" {
+  description = "Allowed Telegram chat ID"
+  type        = string
+  default     = "placeholder"
+}
