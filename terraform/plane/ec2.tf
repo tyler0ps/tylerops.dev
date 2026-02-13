@@ -1,6 +1,5 @@
 # =============================================================================
 # EC2 Resources for Plane
-# NOTE: Instance is managed by Lambda, not Terraform
 # =============================================================================
 
 # Get latest Amazon Linux 2023 AMI (for reference only)
@@ -19,50 +18,7 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
-# =============================================================================
-# REMOVED: aws_instance.plane
-# Instance is now managed by Lambda via Launch Template
-# Lambda creates/terminates instances based on schedule and spot interruptions
-# Keep this code for reference only, not applied by Terraform
-# =============================================================================
-
-# EC2 Instance - Used to create AMI
-# resource "aws_instance" "plane" {
-#   ami                    = var.use_custom_ami ? data.aws_ami.plane_custom.id : data.aws_ami.amazon_linux_2023.id
-#   instance_type          = var.instance_type
-#   subnet_id              = aws_subnet.public.id
-#   vpc_security_group_ids = [aws_security_group.plane.id]
-#   iam_instance_profile   = aws_iam_instance_profile.plane.name
-
-#   root_block_device {
-#     volume_size           = 30
-#     volume_type           = "gp3"
-#     encrypted             = true
-#     delete_on_termination = true # Data is on separate EBS volume
-
-#     tags = {
-#       Name = "plane-root-volume"
-#     }
-#   }
-
-#   user_data = var.use_custom_ami ? templatefile("${path.module}/templates/user-data-ami.sh", {
-#     domain = var.domain_name
-#   }) : templatefile("${path.module}/templates/user-data.sh", {
-#     domain = var.domain_name
-#   })
-
-#   tags = {
-#     Name = "plane"
-#   }
-
-#   lifecycle {
-#     ignore_changes = [ami] # Don't recreate on AMI updates
-#   }
-# }
-
-
 # Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
-# This is managed by Terraform and attached by Lambda to new instances
 resource "aws_ebs_volume" "plane_data" {
   availability_zone = "${var.aws_region}a"
   size              = 30
@@ -78,13 +34,7 @@ resource "aws_ebs_volume" "plane_data" {
   }
 }
 
-# =============================================================================
-# REMOVED: aws_volume_attachment.plane_data
-# Lambda handles volume attachment after instance creation
-# =============================================================================
-
 # Elastic IP (static, Terraform managed)
-# Lambda associates this to new instances
 resource "aws_eip" "plane" {
   domain = "vpc"
 
@@ -94,19 +44,82 @@ resource "aws_eip" "plane" {
 }
 
 # =============================================================================
-# REMOVED: aws_eip_association.plane
-# Lambda handles EIP association after instance creation
+# Auto Scaling Group for Plane
 # =============================================================================
 
-# Data source to find current Lambda-managed instance (for outputs)
-data "aws_instances" "plane_managed" {
-  filter {
-    name   = "tag:ManagedBy"
-    values = ["plane-lambda"]
+resource "aws_autoscaling_group" "plane" {
+  name                = "plane-asg"
+  vpc_zone_identifier = [aws_subnet.public.id]
+  desired_capacity    = 1
+  min_size            = 0
+  max_size            = 1
+
+  mixed_instances_policy {
+    instances_distribution {
+      on_demand_base_capacity                  = 0
+      on_demand_percentage_above_base_capacity = 0
+      spot_allocation_strategy                 = "capacity-optimized"
+    }
+
+    launch_template {
+      launch_template_specification {
+        launch_template_id = aws_launch_template.plane.id
+        version            = "$Latest"
+      }
+
+      dynamic "override" {
+        for_each = var.instance_types
+        content {
+          instance_type = override.value
+        }
+      }
+    }
   }
 
-  filter {
-    name   = "instance-state-name"
-    values = ["pending", "running", "stopping", "stopped"]
+  health_check_type         = "EC2"
+  health_check_grace_period = 300
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 0
+    }
   }
+
+  tag {
+    key                 = "Name"
+    value               = "plane"
+    propagate_at_launch = true
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# =============================================================================
+# Scheduled Scaling (Cost Optimization)
+# ICT = UTC+7
+# =============================================================================
+
+# Scale down to 0 at 10 PM ICT (15:00 UTC)
+resource "aws_autoscaling_schedule" "scale_down" {
+  scheduled_action_name  = "plane-scale-down"
+  autoscaling_group_name = aws_autoscaling_group.plane.name
+  recurrence             = "0 15 * * *"
+
+  min_size         = 0
+  max_size         = 1
+  desired_capacity = 0
+}
+
+# Scale up to 1 at 7 AM ICT (00:00 UTC)
+resource "aws_autoscaling_schedule" "scale_up" {
+  scheduled_action_name  = "plane-scale-up"
+  autoscaling_group_name = aws_autoscaling_group.plane.name
+  recurrence             = "0 0 * * *"
+
+  min_size         = 0
+  max_size         = 1
+  desired_capacity = 1
 }

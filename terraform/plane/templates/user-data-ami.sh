@@ -2,15 +2,27 @@
 set -e
 
 # =============================================================================
-# Plane EC2 Bootstrap Script (AMI-based - simplified)
+# Plane EC2 Bootstrap Script (AMI-based)
 # Docker, Compose, and Plane are already installed in the AMI
-# This script only mounts EBS and starts services
+# This script: self-attaches EBS + EIP, mounts volume, starts services
 # =============================================================================
 
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
-echo "=== Starting Plane (AMI-based boot) ==="
+echo "=== Starting Plane (AMI-based boot, ASG mode) ==="
 echo "Timestamp: $(date)"
+
+# =============================================================================
+# Get Instance Metadata (IMDSv2)
+# =============================================================================
+echo "=== Getting instance metadata ==="
+
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+AZ=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/availability-zone)
+
+echo "Instance ID: $INSTANCE_ID"
+echo "Availability Zone: $AZ"
 
 # =============================================================================
 # Ensure SSM Agent is running
@@ -24,6 +36,64 @@ systemctl start amazon-ssm-agent || true
 echo "=== Ensuring Docker is running ==="
 systemctl start docker
 systemctl enable docker
+
+# =============================================================================
+# Associate Elastic IP
+# =============================================================================
+echo "=== Associating Elastic IP ==="
+
+EIP_ALLOC_ID="${eip_alloc_id}"
+
+# Check if EIP is already associated to another instance
+CURRENT_ASSOC=$(aws ec2 describe-addresses --allocation-ids $EIP_ALLOC_ID --region ${aws_region} --query 'Addresses[0].AssociationId' --output text 2>/dev/null || echo "None")
+
+if [ "$CURRENT_ASSOC" != "None" ] && [ -n "$CURRENT_ASSOC" ]; then
+  echo "Disassociating EIP from previous instance..."
+  aws ec2 disassociate-address --association-id $CURRENT_ASSOC --region ${aws_region} || true
+  sleep 2
+fi
+
+echo "Associating EIP to this instance..."
+aws ec2 associate-address --instance-id $INSTANCE_ID --allocation-id $EIP_ALLOC_ID --region ${aws_region}
+echo "EIP associated successfully"
+
+# =============================================================================
+# Attach EBS Data Volume
+# =============================================================================
+echo "=== Attaching EBS volume ==="
+
+EBS_VOLUME_ID="${ebs_volume_id}"
+
+# Check current volume state
+VOLUME_STATE=$(aws ec2 describe-volumes --volume-ids $EBS_VOLUME_ID --region ${aws_region} --query 'Volumes[0].State' --output text)
+echo "Volume state: $VOLUME_STATE"
+
+if [ "$VOLUME_STATE" == "in-use" ]; then
+  ATTACHED_INSTANCE=$(aws ec2 describe-volumes --volume-ids $EBS_VOLUME_ID --region ${aws_region} --query 'Volumes[0].Attachments[0].InstanceId' --output text)
+  if [ "$ATTACHED_INSTANCE" != "$INSTANCE_ID" ]; then
+    echo "Detaching volume from previous instance $ATTACHED_INSTANCE..."
+    aws ec2 detach-volume --volume-id $EBS_VOLUME_ID --region ${aws_region} --force || true
+    for i in {1..30}; do
+      STATE=$(aws ec2 describe-volumes --volume-ids $EBS_VOLUME_ID --region ${aws_region} --query 'Volumes[0].State' --output text)
+      if [ "$STATE" == "available" ]; then
+        echo "Volume detached"
+        break
+      fi
+      echo "Waiting for volume to detach... ($i/30)"
+      sleep 5
+    done
+  else
+    echo "Volume already attached to this instance"
+  fi
+fi
+
+# Attach volume if not attached to this instance
+VOLUME_STATE=$(aws ec2 describe-volumes --volume-ids $EBS_VOLUME_ID --region ${aws_region} --query 'Volumes[0].State' --output text)
+if [ "$VOLUME_STATE" == "available" ]; then
+  echo "Attaching EBS volume..."
+  aws ec2 attach-volume --volume-id $EBS_VOLUME_ID --instance-id $INSTANCE_ID --device /dev/xvdf --region ${aws_region}
+  echo "Volume attach initiated"
+fi
 
 # =============================================================================
 # Mount EBS Data Volume (contains PostgreSQL, MinIO, Redis data)
@@ -63,9 +133,13 @@ else
     mkfs.xfs $DATA_DEVICE
   fi
 
-  # Mount volume
+  # Mount volume (may already be auto-mounted via fstab from AMI)
   mkdir -p $DATA_MOUNT
-  mount $DATA_DEVICE $DATA_MOUNT
+  if mountpoint -q $DATA_MOUNT; then
+    echo "Data volume already auto-mounted at $DATA_MOUNT"
+  else
+    mount $DATA_DEVICE $DATA_MOUNT
+  fi
 
   # Add to fstab for persistence across reboots
   if ! grep -q "$DATA_MOUNT" /etc/fstab; then

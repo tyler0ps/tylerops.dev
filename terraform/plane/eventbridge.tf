@@ -1,69 +1,27 @@
 # =============================================================================
-# EventBridge Rules for Plane Instance Scheduling
+# EventBridge Rule for ASG Lifecycle Hook (Graceful Shutdown)
+# Triggers Lambda when ASG initiates instance termination
 # =============================================================================
 
-# Schedule: Start instance at 7 AM ICT (00:00 UTC) every day
-resource "aws_cloudwatch_event_rule" "schedule_start" {
-  name                = "plane-schedule-start"
-  description         = "Start Plane instance at 7 AM ICT every day"
-  schedule_expression = "cron(0 0 ? * * *)"
-
-  tags = {
-    Name = "plane-schedule-start"
-  }
-}
-
-resource "aws_cloudwatch_event_target" "schedule_start" {
-  rule      = aws_cloudwatch_event_rule.schedule_start.name
-  target_id = "plane-lambda-start"
-  arn       = aws_lambda_function.plane_manager.arn
-
-  input = jsonencode({
-    action = "schedule_start"
-  })
-}
-
-# Schedule: Stop instance at 10 PM ICT (15:00 UTC) every day
-resource "aws_cloudwatch_event_rule" "schedule_stop" {
-  name                = "plane-schedule-stop"
-  description         = "Stop Plane instance at 10 PM ICT every day"
-  schedule_expression = "cron(0 15 ? * * *)"
-
-  tags = {
-    Name = "plane-schedule-stop"
-  }
-}
-
-resource "aws_cloudwatch_event_target" "schedule_stop" {
-  rule      = aws_cloudwatch_event_rule.schedule_stop.name
-  target_id = "plane-lambda-stop"
-  arn       = aws_lambda_function.plane_manager.arn
-
-  input = jsonencode({
-    action = "schedule_stop"
-  })
-}
-
-# =============================================================================
-# EventBridge Rule for Spot Instance Interruption Warning
-# =============================================================================
-
-resource "aws_cloudwatch_event_rule" "spot_interruption" {
-  name        = "plane-spot-interruption"
-  description = "Handle EC2 Spot Instance Interruption Warning for Plane"
+resource "aws_cloudwatch_event_rule" "lifecycle_terminating" {
+  name        = "plane-lifecycle-terminating"
+  description = "Trigger graceful shutdown when ASG terminates Plane instance"
 
   event_pattern = jsonencode({
-    source      = ["aws.ec2"]
-    detail-type = ["EC2 Spot Instance Interruption Warning"]
+    source      = ["aws.autoscaling"]
+    detail-type = ["EC2 Instance-terminate Lifecycle Action"]
+    detail = {
+      AutoScalingGroupName = [aws_autoscaling_group.plane.name]
+    }
   })
 
   tags = {
-    Name = "plane-spot-interruption"
+    Name = "plane-lifecycle-terminating"
   }
 }
 
-resource "aws_cloudwatch_event_target" "spot_interruption" {
-  rule      = aws_cloudwatch_event_rule.spot_interruption.name
-  target_id = "plane-lambda-spot"
+resource "aws_cloudwatch_event_target" "lifecycle_terminating" {
+  rule      = aws_cloudwatch_event_rule.lifecycle_terminating.name
+  target_id = "plane-lambda-graceful-shutdown"
   arn       = aws_lambda_function.plane_manager.arn
 }
