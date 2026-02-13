@@ -1,5 +1,5 @@
 # =============================================================================
-# IAM Role for EC2 (SSM Session Manager access)
+# IAM Role for EC2 (SSM + Self-attach EBS/EIP)
 # =============================================================================
 
 resource "aws_iam_role" "plane" {
@@ -25,6 +25,39 @@ resource "aws_iam_role_policy_attachment" "ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+# EC2 self-attach policy (EBS volume + Elastic IP)
+resource "aws_iam_role_policy" "ec2_self_attach" {
+  name = "plane-ec2-self-attach"
+  role = aws_iam_role.plane.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "EIPManagement"
+        Effect = "Allow"
+        Action = [
+          "ec2:AssociateAddress",
+          "ec2:DisassociateAddress",
+          "ec2:DescribeAddresses"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "EBSVolumeManagement"
+        Effect = "Allow"
+        Action = [
+          "ec2:AttachVolume",
+          "ec2:DetachVolume",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeInstances"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # Instance profile
 resource "aws_iam_instance_profile" "plane" {
   name = "plane-instance-profile"
@@ -32,7 +65,7 @@ resource "aws_iam_instance_profile" "plane" {
 }
 
 # =============================================================================
-# IAM Role for Lambda (Instance Manager)
+# IAM Role for Lambda (Graceful Shutdown)
 # =============================================================================
 
 resource "aws_iam_role" "lambda" {
@@ -58,57 +91,14 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# Lambda policy for EC2 and SSM operations
-resource "aws_iam_role_policy" "lambda_ec2" {
-  name = "plane-lambda-ec2-policy"
+# Lambda policy for SSM + ASG lifecycle
+resource "aws_iam_role_policy" "lambda_permissions" {
+  name = "plane-lambda-permissions"
   role = aws_iam_role.lambda.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Sid    = "EC2InstanceManagement"
-        Effect = "Allow"
-        Action = [
-          "ec2:RunInstances",
-          "ec2:TerminateInstances",
-          "ec2:StartInstances",
-          "ec2:StopInstances",
-          "ec2:DescribeInstances",
-          "ec2:DescribeInstanceStatus",
-          "ec2:CreateTags"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "EC2VolumeManagement"
-        Effect = "Allow"
-        Action = [
-          "ec2:AttachVolume",
-          "ec2:DetachVolume",
-          "ec2:DescribeVolumes"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "EC2NetworkManagement"
-        Effect = "Allow"
-        Action = [
-          "ec2:AssociateAddress",
-          "ec2:DisassociateAddress",
-          "ec2:DescribeAddresses"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "EC2LaunchTemplate"
-        Effect = "Allow"
-        Action = [
-          "ec2:DescribeLaunchTemplates",
-          "ec2:DescribeLaunchTemplateVersions"
-        ]
-        Resource = "*"
-      },
       {
         Sid    = "SSMCommands"
         Effect = "Allow"
@@ -119,10 +109,13 @@ resource "aws_iam_role_policy" "lambda_ec2" {
         Resource = "*"
       },
       {
-        Sid      = "PassRoleToEC2"
-        Effect   = "Allow"
-        Action   = "iam:PassRole"
-        Resource = aws_iam_role.plane.arn
+        Sid    = "ASGLifecycle"
+        Effect = "Allow"
+        Action = [
+          "autoscaling:CompleteLifecycleAction",
+          "autoscaling:DescribeAutoScalingGroups"
+        ]
+        Resource = "*"
       }
     ]
   })
