@@ -8,38 +8,9 @@ output "plane_url" {
   value       = "https://${var.domain_name}"
 }
 
-output "ssm_command" {
-  description = "SSM Session Manager command to connect to the instance"
-  value       = length(data.aws_instances.plane_managed.ids) > 0 ? "aws ssm start-session --target ${data.aws_instances.plane_managed.ids[0]} --region ${var.aws_region}" : "No instance running (use Lambda to start)"
-}
-
-output "instance_id" {
-  description = "EC2 instance ID (Lambda-managed)"
-  value       = length(data.aws_instances.plane_managed.ids) > 0 ? data.aws_instances.plane_managed.ids[0] : "No instance running"
-}
-
 output "ami_id" {
   description = "Custom Plane AMI ID used by Launch Template"
   value       = data.aws_ami.plane_custom.id
-}
-
-output "custom_ami_id" {
-  description = "Custom Plane AMI ID"
-  value       = try(data.aws_ami.plane_custom.id, "No custom AMI found")
-}
-
-# =============================================================================
-# Lambda + EventBridge Outputs
-# =============================================================================
-
-output "lambda_function_name" {
-  description = "Lambda function name for manual invocation"
-  value       = aws_lambda_function.plane_manager.function_name
-}
-
-output "launch_template_id" {
-  description = "Launch Template ID used by Lambda"
-  value       = aws_launch_template.plane.id
 }
 
 output "ebs_volume_id" {
@@ -47,24 +18,32 @@ output "ebs_volume_id" {
   value       = aws_ebs_volume.plane_data.id
 }
 
+output "asg_name" {
+  description = "Auto Scaling Group name"
+  value       = aws_autoscaling_group.plane.name
+}
+
+output "launch_template_id" {
+  description = "Launch Template ID used by ASG"
+  value       = aws_launch_template.plane.id
+}
+
 output "manual_start_command" {
-  description = "Command to manually start Plane instance"
-  value       = <<-EOT
-    aws lambda invoke \
-      --function-name ${aws_lambda_function.plane_manager.function_name} \
-      --payload '{"action": "schedule_start"}' \
-      --cli-binary-format raw-in-base64-out \
-      response.json && cat response.json
-  EOT
+  description = "Command to manually scale up Plane instance"
+  value       = "aws autoscaling set-desired-capacity --auto-scaling-group-name ${aws_autoscaling_group.plane.name} --desired-capacity 1 --region ${var.aws_region}"
 }
 
 output "manual_stop_command" {
-  description = "Command to manually stop Plane instance"
-  value       = <<-EOT
-    aws lambda invoke \
-      --function-name ${aws_lambda_function.plane_manager.function_name} \
-      --payload '{"action": "schedule_stop"}' \
-      --cli-binary-format raw-in-base64-out \
-      response.json && cat response.json
-  EOT
+  description = "Command to manually scale down Plane instance"
+  value       = "aws autoscaling set-desired-capacity --auto-scaling-group-name ${aws_autoscaling_group.plane.name} --desired-capacity 0 --region ${var.aws_region}"
+}
+
+output "instance_refresh_command" {
+  description = "Command to force redeploy instance (instance refresh)"
+  value       = "aws autoscaling start-instance-refresh --auto-scaling-group-name ${aws_autoscaling_group.plane.name} --preferences '{\"MinHealthyPercentage\": 0}' --region ${var.aws_region}"
+}
+
+output "ssm_command" {
+  description = "SSM Session Manager command to connect to the instance"
+  value       = "aws ssm start-session --target $(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${aws_autoscaling_group.plane.name} --region ${var.aws_region} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text) --region ${var.aws_region}"
 }
