@@ -14,7 +14,7 @@ terraform {
 
   backend "s3" {
     bucket       = "generic-gha-terraform-state"
-    key          = "plane-v2/terraform.tfstate"
+    key          = "plane-ee/terraform.tfstate"
     region       = "ap-southeast-1"
     encrypt      = true
     use_lockfile = true
@@ -26,9 +26,8 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = "plane-v2"
-      ManagedBy   = "terraform"
-      Environment = "production"
+      Project   = "plane-ee"
+      ManagedBy = "terraform"
     }
   }
 }

@@ -1,9 +1,16 @@
 #!/bin/bash
 set -e
 
+# =============================================================================
+# Plane EE Bootstrap Script (AMI-based)
+# Docker, Compose, and Plane EE are already installed in the AMI
+# This script: self-attaches EBS + EIP, mounts volume, starts services
+# =============================================================================
+
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
-echo "=== Starting Plane from AMI (ASG Mode) ==="
+echo "=== Starting Plane EE (AMI-based boot, ASG mode) ==="
+echo "Timestamp: $(date)"
 
 # =============================================================================
 # Get Instance Metadata (IMDSv2)
@@ -16,6 +23,19 @@ AZ=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest
 
 echo "Instance ID: $INSTANCE_ID"
 echo "Availability Zone: $AZ"
+
+# =============================================================================
+# Ensure SSM Agent is running
+# =============================================================================
+echo "=== Ensuring SSM Agent is running ==="
+systemctl start amazon-ssm-agent || true
+
+# =============================================================================
+# Ensure Docker is running
+# =============================================================================
+echo "=== Ensuring Docker is running ==="
+systemctl start docker
+systemctl enable docker
 
 # =============================================================================
 # Associate Elastic IP
@@ -53,7 +73,6 @@ if [ "$VOLUME_STATE" == "in-use" ]; then
   if [ "$ATTACHED_INSTANCE" != "$INSTANCE_ID" ]; then
     echo "Detaching volume from previous instance $ATTACHED_INSTANCE..."
     aws ec2 detach-volume --volume-id $EBS_VOLUME_ID --region ${aws_region} --force || true
-    # Wait for detach
     for i in {1..30}; do
       STATE=$(aws ec2 describe-volumes --volume-ids $EBS_VOLUME_ID --region ${aws_region} --query 'Volumes[0].State' --output text)
       if [ "$STATE" == "available" ]; then
@@ -68,7 +87,7 @@ if [ "$VOLUME_STATE" == "in-use" ]; then
   fi
 fi
 
-# Attach volume if not attached
+# Attach volume if not attached to this instance
 VOLUME_STATE=$(aws ec2 describe-volumes --volume-ids $EBS_VOLUME_ID --region ${aws_region} --query 'Volumes[0].State' --output text)
 if [ "$VOLUME_STATE" == "available" ]; then
   echo "Attaching EBS volume..."
@@ -81,91 +100,70 @@ fi
 # =============================================================================
 echo "=== Mounting data volume ==="
 
-DATA_MOUNT="/opt/plane-data"
+DATA_MOUNT="/opt/plane"
 
-for i in {1..60}; do
-  if [ -e /dev/nvme1n1 ]; then
-    DATA_DEVICE="/dev/nvme1n1"
-    break
-  elif [ -e /dev/xvdf ]; then
-    DATA_DEVICE="/dev/xvdf"
-    break
+# Skip if already mounted (e.g., on reboot)
+if mountpoint -q $DATA_MOUNT; then
+  echo "Data volume already mounted at $DATA_MOUNT"
+else
+  # Detect EBS volume - handles both Nitro (NVMe) and non-Nitro instances
+  echo "Waiting for data volume..."
+  DATA_DEVICE=""
+  for i in {1..60}; do
+    if [ -e /dev/nvme1n1 ]; then
+      DATA_DEVICE="/dev/nvme1n1"
+      break
+    elif [ -e /dev/xvdf ]; then
+      DATA_DEVICE="/dev/xvdf"
+      break
+    fi
+    echo "Waiting for data volume to attach... ($i/60)"
+    sleep 5
+  done
+
+  if [ -z "$DATA_DEVICE" ]; then
+    echo "ERROR: Data volume not found after 5 minutes"
+    exit 1
   fi
-  echo "Waiting for data volume... ($i/60)"
-  sleep 5
-done
+  echo "Found data volume at $DATA_DEVICE"
 
-if [ -z "$DATA_DEVICE" ]; then
-  echo "ERROR: Data volume not found"
+  # Create filesystem if not exists (first boot after AMI creation)
+  if ! blkid $DATA_DEVICE; then
+    echo "Creating filesystem on data volume..."
+    mkfs.xfs $DATA_DEVICE
+  fi
+
+  # Mount volume
+  mkdir -p $DATA_MOUNT
+  if mountpoint -q $DATA_MOUNT; then
+    echo "Data volume already auto-mounted at $DATA_MOUNT"
+  else
+    mount $DATA_DEVICE $DATA_MOUNT
+  fi
+
+  # Add to fstab for persistence across reboots
+  if ! grep -q "$DATA_MOUNT" /etc/fstab; then
+    echo "$DATA_DEVICE $DATA_MOUNT xfs defaults,nofail 0 2" >> /etc/fstab
+  fi
+fi
+
+# =============================================================================
+# Start Plane EE services
+# =============================================================================
+echo "=== Starting Plane EE services ==="
+
+if command -v prime-cli &> /dev/null; then
+  script -qec "prime-cli restart" /dev/null
+
+  echo "=== Waiting for services to start ==="
+  sleep 30
+
+  docker compose ps 2>/dev/null || docker ps
+else
+  echo "ERROR: prime-cli not found"
+  echo "This AMI may not have Plane EE pre-installed"
   exit 1
 fi
 
-# Create filesystem if new volume
-if ! blkid $DATA_DEVICE; then
-  echo "Creating filesystem..."
-  mkfs.xfs $DATA_DEVICE
-fi
-
-mkdir -p $DATA_MOUNT
-
-# Mount only if not already mounted
-if ! mountpoint -q $DATA_MOUNT; then
-  mount $DATA_DEVICE $DATA_MOUNT
-else
-  echo "$DATA_MOUNT already mounted"
-fi
-
-# Add to fstab
-grep -q "$DATA_MOUNT" /etc/fstab || echo "$DATA_DEVICE $DATA_MOUNT xfs defaults,nofail 0 2" >> /etc/fstab
-
-# =============================================================================
-# Test Connections
-# =============================================================================
-echo "=== Testing connections ==="
-
-timeout 3 bash -c "echo >/dev/tcp/${db_host}/5432" && echo "✓ PostgreSQL" || echo "✗ PostgreSQL"
-timeout 3 bash -c "echo >/dev/tcp/${redis_host}/6379" && echo "✓ Redis" || echo "✗ Redis"
-timeout 3 bash -c "echo >/dev/tcp/${mq_host}/5672" && echo "✓ RabbitMQ" || echo "✗ RabbitMQ"
-
-# =============================================================================
-# Update plane.env (override changed values only)
-# =============================================================================
-echo "=== Updating plane.env ==="
-
-PLANE_ENV="/opt/plane/plane.env"
-
-# Database
-sed -i "s|^PGHOST=.*|PGHOST=${db_host}|" $PLANE_ENV
-sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${db_password}|" $PLANE_ENV
-sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgresql://${db_user}:${db_password}@${db_host}:5432/${db_name}|" $PLANE_ENV
-
-# Redis
-sed -i "s|^REDIS_HOST=.*|REDIS_HOST=${redis_host}|" $PLANE_ENV
-sed -i "s|^REDIS_URL=.*|REDIS_URL=redis://${redis_host}:6379/|" $PLANE_ENV
-
-# RabbitMQ
-sed -i "s|^RABBITMQ_HOST=.*|RABBITMQ_HOST=${mq_host}|" $PLANE_ENV
-sed -i "s|^RABBITMQ_DEFAULT_PASS=.*|RABBITMQ_DEFAULT_PASS=${mq_password}|" $PLANE_ENV
-sed -i "s|^AMQP_URL=.*|AMQP_URL=amqp://${mq_user}:${mq_password}@${mq_host}:5672/${mq_vhost}|" $PLANE_ENV
-
-# S3
-sed -i "s|^AWS_ACCESS_KEY_ID=.*|AWS_ACCESS_KEY_ID=${s3_access_key}|" $PLANE_ENV
-sed -i "s|^AWS_SECRET_ACCESS_KEY=.*|AWS_SECRET_ACCESS_KEY=${s3_secret_key}|" $PLANE_ENV
-
-# Domain
-sed -i "s|^DOMAIN_NAME=.*|DOMAIN_NAME=${domain}|" $PLANE_ENV
-sed -i "s|^SITE_ADDRESS=.*|SITE_ADDRESS=${domain}|" $PLANE_ENV
-sed -i "s|^WEB_URL=.*|WEB_URL=https://${domain}|" $PLANE_ENV
-sed -i "s|^CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=http://${domain},https://${domain}|" $PLANE_ENV
-
-echo "Updated values in $PLANE_ENV"
-
-# =============================================================================
-# Start Plane
-# =============================================================================
-echo "=== Starting Plane ==="
-
-script -q -c "prime-cli restart" /dev/null
-
-echo "=== Plane startup complete ==="
-echo "URL: https://${domain}"
+echo "=== Plane EE startup complete ==="
+echo "Access at: https://${domain}"

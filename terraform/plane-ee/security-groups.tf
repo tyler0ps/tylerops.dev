@@ -1,18 +1,18 @@
 # =============================================================================
-# Security Group for Plane EC2
+# Security Group for Plane EE
 # =============================================================================
 
-resource "aws_security_group" "plane" {
-  name        = "plane-v2-sg"
-  description = "Security group for Plane EC2 instance"
-  vpc_id      = aws_vpc.main.id
+resource "aws_security_group" "plane_ee" {
+  name        = "plane-ee-sg"
+  description = "Security group for Plane EE (HTTP/HTTPS + SSM)"
+  vpc_id      = data.aws_vpc.plane.id
 
-  # SSH - for EC2 Instance Connect
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
+  # Egress only - SSM, docker pull, package install
+  egress {
+    description = "All outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -34,16 +34,7 @@ resource "aws_security_group" "plane" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # All outbound traffic (required for SSM, S3, etc.)
-  egress {
-    description = "All outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = {
-    Name = "plane-v2-sg"
+    Name = "plane-ee-sg"
   }
 }
