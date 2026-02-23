@@ -21,7 +21,7 @@ data "aws_ami" "amazon_linux_2023" {
 # Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
 resource "aws_ebs_volume" "plane_data" {
   availability_zone = "${var.aws_region}a"
-  size              = 30
+  size              = 2
   type              = "gp3"
   encrypted         = true
 
