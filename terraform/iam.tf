@@ -62,3 +62,38 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
     ]
   })
 }
+
+# Additional permissions for identity-center Terraform project
+resource "aws_iam_role_policy" "github_actions_identity_center" {
+  name = "identity-center-policy"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "organizations:CreateAccount",
+          "organizations:DescribeAccount",
+          "organizations:DescribeCreateAccountStatus",
+          "organizations:ListAccounts"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sso-admin:*",
+          "identitystore:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "sts:AssumeRole"
+        Resource = "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+      }
+    ]
+  })
+}
