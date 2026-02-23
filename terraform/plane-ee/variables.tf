@@ -22,10 +22,10 @@ variable "instance_types" {
   default = [
     # "t4g.small", 
     "t4g.medium", # Graviton2, 2 vCPU, 4GB
-    "t4g.large",  # Graviton2, 2 vCPU, 8GB
-    # "m6g.medium", # Graviton2, 1 vCPU, 4GB
+    # "t4g.large",  # Graviton2, 2 vCPU, 8GB
+    "m6g.medium", # Graviton2, 1 vCPU, 4GB
     # "m6g.large",  # Graviton2, 2 vCPU, 8GB
-    # "m7g.medium", # Graviton3, 1 vCPU, 4GB
+    "m7g.medium", # Graviton3, 1 vCPU, 4GB
     # "m7g.large",  # Graviton3, 2 vCPU, 8GB
   ]
 }

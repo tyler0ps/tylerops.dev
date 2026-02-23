@@ -14,7 +14,7 @@ resource "aws_ebs_volume" "plane_ee_data" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -87,23 +87,23 @@ resource "aws_autoscaling_group" "plane_ee" {
 # =============================================================================
 
 # Scale down to 0 at 10 PM ICT (15:00 UTC)
-resource "aws_autoscaling_schedule" "scale_down" {
-  scheduled_action_name  = "plane-ee-scale-down"
-  autoscaling_group_name = aws_autoscaling_group.plane_ee.name
-  recurrence             = "0 15 * * *"
+# resource "aws_autoscaling_schedule" "scale_down" {
+#   scheduled_action_name  = "plane-ee-scale-down"
+#   autoscaling_group_name = aws_autoscaling_group.plane_ee.name
+#   recurrence             = "0 15 * * *"
 
-  min_size         = 0
-  max_size         = 1
-  desired_capacity = 0
-}
+#   min_size         = 0
+#   max_size         = 1
+#   desired_capacity = 0
+# }
 
-# Scale up to 1 at 7 AM ICT (00:00 UTC)
-resource "aws_autoscaling_schedule" "scale_up" {
-  scheduled_action_name  = "plane-ee-scale-up"
-  autoscaling_group_name = aws_autoscaling_group.plane_ee.name
-  recurrence             = "0 0 * * *"
+# # Scale up to 1 at 7 AM ICT (00:00 UTC)
+# resource "aws_autoscaling_schedule" "scale_up" {
+#   scheduled_action_name  = "plane-ee-scale-up"
+#   autoscaling_group_name = aws_autoscaling_group.plane_ee.name
+#   recurrence             = "0 0 * * *"
 
-  min_size         = 0
-  max_size         = 1
-  desired_capacity = 1
-}
+#   min_size         = 0
+#   max_size         = 1
+#   desired_capacity = 1
+# }
