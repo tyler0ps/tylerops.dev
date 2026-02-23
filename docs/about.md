@@ -15,6 +15,9 @@ My background in backend systems and mobile development gives me a unique perspe
 
 ## Certifications
 
+**AWS Certified Solutions Architect – Professional** (February 2026)
+[Verify Credential](https://www.credly.com/badges/3f18ded2-6c62-4339-9bc5-993ab3dd405e/public_url)
+
 **AWS Certified Solutions Architect - Associate** (February 2024)
 [Verify Credential](https://cp.certmetrics.com/amazon/en/public/verify/credential/9ab9bc99761b484e990d005e735f6671)
 
