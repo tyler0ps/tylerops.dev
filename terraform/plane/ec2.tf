@@ -18,6 +18,58 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
+## Helper instance
+# resource "aws_instance" "baker" {
+#   ami                    = data.aws_ami.amazon_linux_2023.id
+#   instance_type          = "t4g.small"
+#   subnet_id              = aws_subnet.public.id
+#   vpc_security_group_ids = [aws_security_group.plane.id]
+#   iam_instance_profile   = aws_iam_instance_profile.plane.name
+
+#   user_data = base64encode(templatefile("${path.module}/templates/user-data.sh", {
+#     domain = var.domain_name
+#   }))
+
+#   ebs_block_device {
+#     device_name           = "/dev/xvda"
+#     volume_size           = 8
+#     volume_type           = "gp3"
+#     encrypted             = true
+#     delete_on_termination = true
+#   }
+
+#   tags = {
+#     Name = "plane-ami-baker"
+#   }
+
+# }
+
+# resource "aws_ebs_volume" "plane_data_baker" {
+#   availability_zone = "${var.aws_region}a"
+#   size              = 2
+#   type              = "gp3"
+#   encrypted         = true
+
+#   tags = {
+#     Name = "plane-data-volume-baker"
+#   }
+
+#   lifecycle {
+#     prevent_destroy = false
+#   }
+# }
+
+# resource "aws_volume_attachment" "plane_data_baker" {
+#   device_name = "/dev/xvdf"
+#   volume_id   = aws_ebs_volume.plane_data_baker.id
+#   instance_id = aws_instance.baker.id
+# }
+
+# resource "aws_eip_association" "baker" {
+#   instance_id   = aws_instance.baker.id
+#   allocation_id = aws_eip.plane.id
+# }
+
 # Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
 resource "aws_ebs_volume" "plane_data" {
   availability_zone = "${var.aws_region}a"
