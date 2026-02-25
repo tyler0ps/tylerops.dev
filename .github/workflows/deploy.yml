@@ -24,7 +24,7 @@ permissions:
 
 env:
   AWS_REGION: ap-southeast-1
-  S3_BUCKET: oceancloud-click-site
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
 
 jobs:
   build:
@@ -100,6 +100,6 @@ jobs:
       - name: Deployment summary
         run: |
           echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
-          echo "**Website URL:** https://oceancloud.click" >> $GITHUB_STEP_SUMMARY
+          echo "**Website URL:** https://tylerops.dev" >> $GITHUB_STEP_SUMMARY
           echo "**S3 Bucket:** ${{ env.S3_BUCKET }}" >> $GITHUB_STEP_SUMMARY
           echo "**CloudFront Distribution:** ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" >> $GITHUB_STEP_SUMMARY
