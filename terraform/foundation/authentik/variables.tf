@@ -7,14 +7,14 @@ variable "aws_region" {
 variable "domain_name" {
   description = "Domain name for Authentik"
   type        = string
-  default     = "authentik.tylerops.dev"
+  default     = "auth.tylerops.dev"
 }
 
 variable "instance_type" {
   description = "EC2 instance type (primary, used in launch template)"
   type        = string
   # default     = "c8g.medium"
-  default     = "t4g.small"
+  default     = "t4g.micro"
 }
 
 variable "instance_types" {

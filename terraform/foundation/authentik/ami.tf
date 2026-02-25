@@ -8,7 +8,7 @@ data "aws_ami" "authentik_custom" {
 
   filter {
     name   = "name"
-    values = ["authentik-ami-*"] # ami-0952223645eba851b
+    values = ["authentik-ami-*"] # ami-0f9fcc57dd29c08b2
   }
 
   filter {
