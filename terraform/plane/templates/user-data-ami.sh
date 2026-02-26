@@ -25,6 +25,21 @@ echo "Instance ID: $INSTANCE_ID"
 echo "Availability Zone: $AZ"
 
 # =============================================================================
+# Swap (protects SSM agent + system from OOM killer during Plane spikes)
+# =============================================================================
+echo "=== Setting up swap ==="
+if ! swapon --show | grep -q /swapfile; then
+  fallocate -l 2G /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  echo "Swap enabled"
+else
+  echo "Swap already active"
+fi
+
+# =============================================================================
 # Ensure SSM Agent is running
 # =============================================================================
 echo "=== Ensuring SSM Agent is running ==="
