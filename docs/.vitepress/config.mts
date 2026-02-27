@@ -63,12 +63,6 @@ export default defineConfig({
       { icon: 'linkedin', link: 'https://linkedin.com/in/tylerops' },
     ],
 
-    // Footer
-    footer: {
-      message: 'Built with VitePress',
-      copyright: 'Copyright 2025 tylerops'
-    },
-
     // Search
     search: {
       provider: 'local'
