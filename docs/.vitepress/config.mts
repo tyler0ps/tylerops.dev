@@ -50,8 +50,8 @@ export default defineConfig({
           text: 'Projects',
           items: [
             { text: 'Overview', link: '/projects/' },
-            { text: 'DevOps Materials', link: '/projects/devops-materials' },
-            { text: 'DevOps Practices', link: '/projects/devops-practices' },
+            { text: 'AWS Baseline', link: '/projects/aws-baseline' },
+            { text: 'Challenges', link: '/projects/challenges' },
           ]
         }
       ]

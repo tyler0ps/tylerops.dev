@@ -13,12 +13,6 @@ hero:
       text: Read Blog
       link: /blog/
     - theme: alt
-      text: Workplace
-      link: https://capitalplace.tylerops.dev
-    - theme: alt
-      text: SSO
-      link: https://auth.tylerops.dev
-    - theme: alt
       text: About Me
       link: /about
 
@@ -32,10 +26,9 @@ features:
   - icon: 📖
     title: Learn by Doing
     details: Each project comes with detailed guides explaining the why, not just the how.
-  - icon: 📋
-    title: Workplace
-    details: Project management and documentation hub. Tracks tasks, docs, and progress across personal and team projects.
-  - icon: 🔐
-    title: SSO
-    details: Centralized identity via AWS IAM Identity Center. Single sign-on across GitHub, Plane, Workplace, and internal tools.
+  - icon: 🏗️
+    title: AWS Baseline
+    details: A full cloud stack built on AWS best practices — Organization, SSO, Kubernetes, Observability, and self-hosted tools. Architecture write-ups in progress.
+    link: /projects/aws-baseline
+    linkText: See the stack
 ---
