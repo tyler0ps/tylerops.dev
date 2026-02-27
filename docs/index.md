@@ -16,6 +16,9 @@ hero:
       text: Workplace
       link: https://capitalplace.tylerops.dev
     - theme: alt
+      text: SSO
+      link: https://auth.tylerops.dev
+    - theme: alt
       text: About Me
       link: /about
 
@@ -31,5 +34,8 @@ features:
     details: Each project comes with detailed guides explaining the why, not just the how.
   - icon: 📋
     title: Workplace
-    details: Simple project management and documentation tool. Perfect for personal use or small teams.
+    details: Project management and documentation hub. Tracks tasks, docs, and progress across personal and team projects.
+  - icon: 🔐
+    title: SSO
+    details: Centralized identity via AWS IAM Identity Center. Single sign-on across GitHub, Plane, Workplace, and internal tools.
 ---
