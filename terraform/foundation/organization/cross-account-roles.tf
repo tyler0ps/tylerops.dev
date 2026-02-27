@@ -1,3 +1,4 @@
+# TODO: FIX. THIS IS NOT WORKING YET.
 locals {
   terraform_deploy_trust_policy = jsonencode({
     Version = "2012-10-17"
@@ -6,6 +7,17 @@ locals {
         Effect    = "Allow"
         Principal = { AWS = var.github_actions_role_arn }
         Action    = "sts:AssumeRole"
+      },
+      {
+        # Allow platform_admin SSO role from management account (suffix is dynamic)
+        Effect    = "Allow"
+        Principal = { AWS = "arn:aws:iam::${var.management_account_id}:root" }
+        Action    = "sts:AssumeRole"
+        Condition = {
+          ArnLike = {
+            "aws:PrincipalArn" = "arn:aws:iam::${var.management_account_id}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_AdministratorAccess_*"
+          }
+        }
       }
     ]
   })
