@@ -40,6 +40,7 @@ export default defineConfig({
           text: 'Blog Posts',
           items: [
             { text: 'All Posts', link: '/blog/' },
+            { text: 'Static Website Hosting', link: '/blog/posts/static-website-hosting' },
             { text: 'EKS + Karpenter', link: '/blog/posts/eks-karpenter-setup' },
           ]
         }
