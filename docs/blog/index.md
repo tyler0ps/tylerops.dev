@@ -23,4 +23,34 @@ Learn how to set up Amazon EKS with Karpenter for efficient, cost-optimized Kube
 
 ---
 
+## Coming Soon
+
+### AWS Organization & Account Structure
+*In progress*
+
+Multi-account setup following AWS best practices — SCPs, consolidated billing, centralized logging, and account vending.
+
+---
+
+### Passwordless SSO with AWS IAM Identity Center
+*In progress*
+
+Centralized identity across AWS accounts and self-hosted tools. No IAM users, no long-lived credentials.
+
+---
+
+### Observability Stack on EKS (LGTM)
+*In progress*
+
+Logging, metrics, and tracing with Loki, Grafana, Tempo, and Mimir — deployed on EKS with Terraform.
+
+---
+
+### Self-hosted Internal Stack: Plane + SSO
+*In progress*
+
+Running a self-hosted project management system backed by AWS IAM Identity Center — architecture, infra, and security model.
+
+---
+
 Want to be notified of new posts? Follow me on [GitHub](https://github.com/tyler0ps) or [LinkedIn](https://linkedin.com/in/tylerops).

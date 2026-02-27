@@ -5,13 +5,9 @@ description: DevOps projects and learning resources
 
 # Projects
 
-## [DevOps Materials](/projects/devops-materials)
+## [AWS Baseline](/projects/aws-baseline)
 
-Working DevOps setups for various cloud technologies. Includes EKS + Karpenter, ArgoCD, LGTM Stack, and more. Use as reference implementations.
-
-## [DevOps Practices](/projects/devops-practices)
-
-Solutions for Linux and DevOps challenges from cmdchallenge, SadServers, iximiuz labs, and other platforms.
+A production-grade cloud infrastructure built on AWS best practices — multi-account structure, centralized SSO, Kubernetes, Observability, and self-hosted tooling. Plus additional reference implementations for EKS + ArgoCD, VPN, and CI/CD pipelines.
 
 ---
 
