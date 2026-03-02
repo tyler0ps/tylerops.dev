@@ -24,6 +24,11 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
+variable "pod_subnet_ids_by_az" {
+  description = "Pod subnet IDs keyed by AZ for VPC CNI custom networking (secondary CIDR)"
+  type        = map(string)
+}
+
 variable "karpenter_version" {
   description = "Karpenter Helm chart version"
   type        = string

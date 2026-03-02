@@ -92,3 +92,36 @@ resource "aws_subnet" "private_b" {
     Name = "management-private-subnet-b"
   }
 }
+
+# ============================================================
+# Secondary CIDR - Pod IPs (100.64.0.0/16 CGNAT range)
+# Nodes use 10.0.x.0/24, Pods use 100.64.x.0/19 → 8190 IPs/AZ
+# ============================================================
+resource "aws_vpc_ipv4_cidr_block_association" "pods" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "100.64.0.0/16"
+}
+
+resource "aws_subnet" "pods_a" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "100.64.0.0/19"
+  availability_zone = "${var.aws_region}a"
+
+  depends_on = [aws_vpc_ipv4_cidr_block_association.pods]
+
+  tags = {
+    Name = "management-pods-subnet-a"
+  }
+}
+
+resource "aws_subnet" "pods_b" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "100.64.32.0/19"
+  availability_zone = "${var.aws_region}b"
+
+  depends_on = [aws_vpc_ipv4_cidr_block_association.pods]
+
+  tags = {
+    Name = "management-pods-subnet-b"
+  }
+}
