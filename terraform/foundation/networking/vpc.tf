@@ -53,3 +53,42 @@ resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id
 }
+
+# Public Subnet az-b (for EKS multi-AZ)
+resource "aws_subnet" "public_b" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "${var.aws_region}b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "management-public-subnet-b"
+  }
+}
+
+resource "aws_route_table_association" "public_b" {
+  subnet_id      = aws_subnet.public_b.id
+  route_table_id = aws_route_table.public.id
+}
+
+# Private Subnet az-a (EKS nodes)
+resource "aws_subnet" "private_a" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.10.0/24"
+  availability_zone = "${var.aws_region}a"
+
+  tags = {
+    Name = "management-private-subnet-a"
+  }
+}
+
+# Private Subnet az-b (EKS nodes)
+resource "aws_subnet" "private_b" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.11.0/24"
+  availability_zone = "${var.aws_region}b"
+
+  tags = {
+    Name = "management-private-subnet-b"
+  }
+}
