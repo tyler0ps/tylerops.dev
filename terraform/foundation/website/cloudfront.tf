@@ -1,3 +1,24 @@
+# CloudFront Function to rewrite clean URLs to .html files (VitePress cleanUrls)
+resource "aws_cloudfront_function" "url_rewrite" {
+  name    = "${replace(var.domain_name, ".", "-")}-url-rewrite"
+  runtime = "cloudfront-js-2.0"
+  comment = "Rewrite clean URLs to .html files for VitePress static site"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+
+      // If URI has no file extension and doesn't end with /, append .html
+      if (!uri.endsWith('/') && !uri.split('/').pop().includes('.')) {
+        request.uri = uri + '.html';
+      }
+
+      return request;
+    }
+  EOT
+}
+
 # Origin Access Control
 resource "aws_cloudfront_origin_access_control" "site" {
   name                              = "${var.domain_name}-oac"
@@ -39,19 +60,24 @@ resource "aws_cloudfront_distribution" "site" {
     default_ttl            = 3600
     max_ttl                = 86400
     compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.url_rewrite.arn
+    }
   }
 
-  # Custom error response for SPA routing
+  # Serve VitePress 404 page for missing files
   custom_error_response {
     error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
+    response_code      = 404
+    response_page_path = "/404.html"
   }
 
   custom_error_response {
     error_code         = 403
-    response_code      = 200
-    response_page_path = "/index.html"
+    response_code      = 404
+    response_page_path = "/404.html"
   }
 
   restrictions {
