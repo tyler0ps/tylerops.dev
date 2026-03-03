@@ -56,6 +56,22 @@ resource "aws_eip" "authentik" {
   }
 }
 
+# Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
+resource "aws_ebs_volume" "plane_data" {
+  availability_zone = "${var.aws_region}a"
+  size              = 2
+  type              = "gp3"
+  encrypted         = true
+
+  tags = {
+    Name = "plane-data-volume"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 # =============================================================================
 # Launch Template
 # =============================================================================
@@ -180,18 +196,22 @@ resource "aws_autoscaling_group" "authentik" {
   }
 }
 
-# Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
-resource "aws_ebs_volume" "plane_data" {
-  availability_zone = "${var.aws_region}a"
-  size              = 2
-  type              = "gp3"
-  encrypted         = true
+# Scale down at 22:00 Vietnam (15:00 UTC) — to save cost overnight
+resource "aws_autoscaling_schedule" "authentik_scale_down" {
+  scheduled_action_name  = "authentik-scale-down"
+  autoscaling_group_name = aws_autoscaling_group.authentik.name
+  recurrence             = "0 15 * * *" # 22:00 Asia/Ho_Chi_Minh (UTC+7)
+  desired_capacity       = 0
+  min_size               = 0
+  max_size               = 1
+}
 
-  tags = {
-    Name = "plane-data-volume"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
+# Scale up at 06:00 Vietnam (23:00 UTC)
+resource "aws_autoscaling_schedule" "authentik_scale_up" {
+  scheduled_action_name  = "authentik-scale-up"
+  autoscaling_group_name = aws_autoscaling_group.authentik.name
+  recurrence             = "0 23 * * *" # 06:00 Asia/Ho_Chi_Minh (UTC+7)
+  desired_capacity       = 1
+  min_size               = 1
+  max_size               = 1
 }
