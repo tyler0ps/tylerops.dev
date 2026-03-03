@@ -1,6 +1,6 @@
 import json
 import os
-import boto3 # type: ignore
+import boto3  # type: ignore
 import urllib.request
 import urllib.parse
 
@@ -45,12 +45,18 @@ def send_message(chat_id: str, text: str) -> None:
         pass
 
 
-def scale(asg_name: str, desired: int) -> None:
+def scale(asg_name: str, desired: int) -> bool:
+    """Scale ASG to desired capacity. Returns True if changed, False if already at desired."""
+    resp = _asg.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])
+    current = resp["AutoScalingGroups"][0]["DesiredCapacity"]
+    if current == desired:
+        return False
     _asg.update_auto_scaling_group(
         AutoScalingGroupName=asg_name,
         MinSize=desired,
         DesiredCapacity=desired,
     )
+    return True
 
 
 def get_status() -> str:
@@ -96,21 +102,33 @@ def handler(event, _context):
         return {"statusCode": 200, "body": "ok"}
 
     try:
-        # Normalize both "/nat_down" and "/nat down" → "nat_down"
+        # Normalize "/nat_down" and "/nat down" → "nat_down"
         cmd = text.lower().strip().lstrip("/").split("@")[0].replace(" ", "_")
 
         if cmd == "authentik_up":
-            scale(AUTHENTIK_ASG, 1)
-            send_message(chat_id, "Authentik: starting...\nInstance will be ready in ~1-2 min at auth.tylerops.dev")
+            changed = scale(AUTHENTIK_ASG, 1)
+            if changed:
+                send_message(chat_id, "Authentik: starting...\nReady in ~1-2 min at auth.tylerops.dev")
+            else:
+                send_message(chat_id, "Authentik: already running")
         elif cmd == "authentik_down":
-            scale(AUTHENTIK_ASG, 0)
-            send_message(chat_id, "Authentik: stopping...\nauth.tylerops.dev will be unavailable")
+            changed = scale(AUTHENTIK_ASG, 0)
+            if changed:
+                send_message(chat_id, "Authentik: stopping...\nauth.tylerops.dev will be unavailable")
+            else:
+                send_message(chat_id, "Authentik: already stopped")
         elif cmd == "nat_up":
-            scale(NAT_ASG, 1)
-            send_message(chat_id, "NAT: starting...\nPrivate subnet egress will be available in ~1 min")
+            changed = scale(NAT_ASG, 1)
+            if changed:
+                send_message(chat_id, "NAT: starting...\nPrivate subnet egress available in ~1 min")
+            else:
+                send_message(chat_id, "NAT: already running")
         elif cmd == "nat_down":
-            scale(NAT_ASG, 0)
-            send_message(chat_id, "NAT: stopping...\nPrivate subnet internet access disabled")
+            changed = scale(NAT_ASG, 0)
+            if changed:
+                send_message(chat_id, "NAT: stopping...\nPrivate subnet internet access disabled")
+            else:
+                send_message(chat_id, "NAT: already stopped")
         elif cmd == "status":
             send_message(chat_id, get_status())
         elif cmd in ("help", "start"):
