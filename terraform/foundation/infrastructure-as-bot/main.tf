@@ -5,3 +5,8 @@ resource "random_password" "webhook_secret" {
   length  = 32
   special = false
 }
+
+resource "random_password" "url_path_secret" {
+  length  = 32
+  special = false
+}

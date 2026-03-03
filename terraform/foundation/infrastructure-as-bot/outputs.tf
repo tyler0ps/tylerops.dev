@@ -1,9 +1,15 @@
 output "webhook_url" {
-  value = "${aws_apigatewayv2_stage.default.invoke_url}/webhook"
+  value     = "${aws_apigatewayv2_stage.default.invoke_url}/webhook/${random_password.url_path_secret.result}"
+  sensitive = true
 }
 
 output "webhook_secret" {
   value     = random_password.webhook_secret.result
+  sensitive = true
+}
+
+output "url_path_secret" {
+  value     = random_password.url_path_secret.result
   sensitive = true
 }
 
@@ -13,7 +19,7 @@ output "register_webhook_cmd" {
   value     = <<-EOT
     BOT_TOKEN=$(aws ssm get-parameter --name ${var.bot_token_ssm_path} --with-decryption --query Parameter.Value --output text)
     curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/setWebhook" \
-      --data-urlencode "url=${aws_apigatewayv2_stage.default.invoke_url}/webhook" \
+      --data-urlencode "url=${aws_apigatewayv2_stage.default.invoke_url}/webhook/${random_password.url_path_secret.result}" \
       --data-urlencode "secret_token=${random_password.webhook_secret.result}"
   EOT
 }

@@ -12,7 +12,7 @@ resource "aws_apigatewayv2_integration" "lambda" {
 
 resource "aws_apigatewayv2_route" "webhook" {
   api_id    = aws_apigatewayv2_api.bot.id
-  route_key = "POST /webhook"
+  route_key = "POST /webhook/${random_password.url_path_secret.result}"
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
@@ -27,5 +27,5 @@ resource "aws_lambda_permission" "apigw" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.bot.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.bot.execution_arn}/*/*/webhook"
+  source_arn    = "${aws_apigatewayv2_api.bot.execution_arn}/*/*/webhook/${random_password.url_path_secret.result}"
 }
