@@ -20,7 +20,7 @@ variable "instance_type" {
   description = "EC2 instance type (primary, used in launch template)"
   type        = string
   # default     = "c8g.large"
-  default     = "t4g.micro"
+  default = "t4g.small"
 }
 
 variable "instance_types" {
@@ -28,12 +28,12 @@ variable "instance_types" {
   type        = list(string)
   default = [
     # "c8g.large",
-    "t4g.micro",
+    "t4g.small",
+    "c6g.medium",
+    "c7g.medium",
+    "c8g.medium",
     # "t4g.medium",
     # "c6g.medium",
-    # "c8g.medium",
-    # "c6g.medium",
-    # "c7g.medium",
     # "t4g.medium",
     # "m6g.medium",
   ]
