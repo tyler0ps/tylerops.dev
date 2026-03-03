@@ -10,10 +10,16 @@ variable "domain_name" {
   default     = "auth.tylerops.dev"
 }
 
+variable "domain_name_plane" {
+  description = "Domain name for Plane"
+  type        = string
+  default     = "capitalplace.tylerops.dev"
+}
+
 variable "instance_type" {
   description = "EC2 instance type (primary, used in launch template)"
   type        = string
-  # default     = "c8g.medium"
+  # default     = "c8g.large"
   default     = "t4g.micro"
 }
 
@@ -21,6 +27,7 @@ variable "instance_types" {
   description = "List of instance types for spot allocation fallback"
   type        = list(string)
   default = [
+    # "c8g.large",
     "t4g.micro",
     # "t4g.medium",
     # "c6g.medium",

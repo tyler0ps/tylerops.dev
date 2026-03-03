@@ -76,11 +76,15 @@ resource "aws_launch_template" "authentik" {
     security_groups             = [aws_security_group.authentik.id]
   }
 
-  user_data = base64encode(templatefile("${path.module}/templates/user-data-ami.sh", {
+  user_data = base64encode(templatefile("${path.module}/templates/user-data-auth-plane.sh", {
     ebs_volume_id = aws_ebs_volume.authentik_data.id
     eip_alloc_id  = aws_eip.authentik.id
     aws_region    = var.aws_region
     domain        = var.domain_name
+
+    # plane
+    plane_ebs_volume_id = aws_ebs_volume.plane_data.id
+    plane_domain        = var.domain_name_plane
   }))
 
   tag_specifications {
@@ -103,7 +107,7 @@ resource "aws_launch_template" "authentik" {
   block_device_mappings {
     device_name = "/dev/xvda"
     ebs {
-      volume_size           = 8
+      volume_size           = 15
       volume_type           = "gp3"
       encrypted             = true
       delete_on_termination = true
@@ -173,5 +177,21 @@ resource "aws_autoscaling_group" "authentik" {
 
   lifecycle {
     create_before_destroy = true
+  }
+}
+
+# Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
+resource "aws_ebs_volume" "plane_data" {
+  availability_zone = "${var.aws_region}a"
+  size              = 2
+  type              = "gp3"
+  encrypted         = true
+
+  tags = {
+    Name = "plane-data-volume"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
