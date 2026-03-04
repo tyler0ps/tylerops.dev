@@ -10,7 +10,6 @@ variable "bot_token_ssm_path" {
 variable "allowed_chat_id" {
   description = "Telegram chat_id allowed to execute commands (get from @userinfobot)"
   type        = string
-  default     = "674675074"
 }
 
 variable "authentik_asg_name" {

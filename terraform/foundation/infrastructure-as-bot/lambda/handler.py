@@ -3,6 +3,7 @@ import os
 import boto3  # type: ignore
 import urllib.request
 import urllib.parse
+from datetime import datetime, timezone, timedelta
 
 WEBHOOK_SECRET = os.environ["WEBHOOK_SECRET"]
 BOT_TOKEN_SSM_PATH = os.environ["BOT_TOKEN_SSM_PATH"]
@@ -12,12 +13,15 @@ ALLOWED_CHAT_ID = os.environ["ALLOWED_CHAT_ID"]
 
 _ssm = boto3.client("ssm")
 _asg = boto3.client("autoscaling")
+_ec2 = boto3.client("ec2")
 _token_cache: dict = {}
+
+ICT = timezone(timedelta(hours=7))
 
 HELP_TEXT = """Infrastructure Manager
 
 Authentik (auth.tylerops.dev)
-  /authentik_up   — start instance (t4g.small spot)
+  /authentik_up   — start instance
   /authentik_down — stop instance
 
 NAT Instance (private subnet egress)
@@ -59,6 +63,15 @@ def scale(asg_name: str, desired: int) -> bool:
     return True
 
 
+def _format_uptime(launch_time: datetime) -> str:
+    delta = datetime.now(tz=timezone.utc) - launch_time
+    h, rem = divmod(int(delta.total_seconds()), 3600)
+    m = rem // 60
+    if h:
+        return f"{h}h {m}m"
+    return f"{m}m"
+
+
 def get_status() -> str:
     resp = _asg.describe_auto_scaling_groups(
         AutoScalingGroupNames=[AUTHENTIK_ASG, NAT_ASG]
@@ -67,21 +80,51 @@ def get_status() -> str:
         AUTHENTIK_ASG: "Authentik (auth.tylerops.dev)",
         NAT_ASG: "NAT (private subnet egress)",
     }
+
+    # Collect all InService instance IDs across groups
+    all_instance_ids = [
+        i["InstanceId"]
+        for g in resp["AutoScalingGroups"]
+        for i in g["Instances"]
+        if i["LifecycleState"] == "InService"
+    ]
+
+    # Fetch LaunchTime from EC2 in one call
+    ec2_info: dict[str, dict] = {}
+    if all_instance_ids:
+        ec2_resp = _ec2.describe_instances(InstanceIds=all_instance_ids)
+        for reservation in ec2_resp["Reservations"]:
+            for inst in reservation["Instances"]:
+                ec2_info[inst["InstanceId"]] = inst
+
     lines = ["Service Status\n"]
     for group in resp["AutoScalingGroups"]:
         name = group["AutoScalingGroupName"]
         desired = group["DesiredCapacity"]
-        running = sum(
-            1 for i in group["Instances"] if i["LifecycleState"] == "InService"
-        )
+        in_service = [i for i in group["Instances"] if i["LifecycleState"] == "InService"]
+        running = len(in_service)
+
         if desired == 0:
             state = "stopped"
         elif running == desired:
             state = "running"
         else:
             state = f"starting ({running}/{desired} ready)"
+
         label = labels.get(name, name)
-        lines.append(f"{label}\n  desired={desired} | {state}")
+        block = f"{label}\n  {state}"
+
+        if in_service:
+            inst_id = in_service[0]["InstanceId"]
+            instance_type = in_service[0].get("InstanceType", "?")
+            ec2 = ec2_info.get(inst_id, {})
+            launch_time = ec2.get("LaunchTime")
+            if launch_time:
+                launched_ict = launch_time.astimezone(ICT).strftime("%m-%d %H:%M ICT")
+                block += f"\n  {instance_type} | up {_format_uptime(launch_time)} (since {launched_ict})"
+
+        lines.append(block)
+
     return "\n\n".join(lines)
 
 

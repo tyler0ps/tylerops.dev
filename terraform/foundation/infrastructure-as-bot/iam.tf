@@ -40,6 +40,12 @@ data "aws_iam_policy_document" "lambda_policy" {
   }
 
   statement {
+    sid       = "EC2Describe"
+    actions   = ["ec2:DescribeInstances"]
+    resources = ["*"]
+  }
+
+  statement {
     sid     = "SSMGetToken"
     actions = ["ssm:GetParameter"]
     resources = [
