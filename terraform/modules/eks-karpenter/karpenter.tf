@@ -33,6 +33,8 @@ resource "helm_release" "karpenter" {
 
   values = [
     <<-EOT
+    replicaCount: 1
+    
     settings:
       clusterName: ${module.eks.cluster_name}
       clusterEndpoint: ${module.eks.cluster_endpoint}

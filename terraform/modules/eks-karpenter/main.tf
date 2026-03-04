@@ -68,7 +68,8 @@ module "eks" {
   # ============================================================
   cluster_addons = {
     coredns = {
-      most_recent = true
+      most_recent          = true
+      configuration_values = jsonencode({ replicaCount = 1 })
     }
 
     eks-pod-identity-agent = {
@@ -91,7 +92,8 @@ module "eks" {
     }
 
     aws-ebs-csi-driver = {
-      addon_version = "v1.55.0-eksbuild.1"
+      addon_version        = "v1.55.0-eksbuild.1"
+      configuration_values = jsonencode({ controller = { replicaCount = 1 } })
     }
   }
 
