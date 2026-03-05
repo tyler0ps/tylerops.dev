@@ -1,0 +1,18 @@
+provider:
+  name: aws
+
+env:
+  - name: AWS_DEFAULT_REGION
+    value: ap-southeast-1
+
+serviceAccount:
+  annotations:
+    # Injected by terraform helm_release set{} — do not hardcode here
+    eks.amazonaws.com/role-arn: ""
+
+sources:
+  - gateway-httproute
+
+policy: sync
+
+txtOwnerId: eks-foundation

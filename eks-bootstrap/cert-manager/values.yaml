@@ -1,0 +1,7 @@
+crds:
+  enabled: true
+
+serviceAccount:
+  annotations:
+    # Injected by terraform helm_release set{} — do not hardcode here
+    eks.amazonaws.com/role-arn: ""

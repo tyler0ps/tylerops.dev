@@ -33,6 +33,21 @@ output "ebs_csi_pod_identity_role_arn" {
   value       = module.eks_karpenter.ebs_csi_pod_identity_role_arn
 }
 
+output "cert_manager_irsa_arn" {
+  description = "ARN of IAM role for cert-manager"
+  value       = aws_iam_role.cert_manager.arn
+}
+
+output "external_dns_irsa_arn" {
+  description = "ARN of IAM role for external-dns"
+  value       = aws_iam_role.external_dns.arn
+}
+
+output "vpc_id" {
+  description = "VPC ID"
+  value       = data.terraform_remote_state.networking.outputs.vpc_id
+}
+
 output "configure_kubectl" {
   description = "Command to configure kubectl"
   value       = "aws eks update-kubeconfig --name ${module.eks_karpenter.cluster_name} --region ap-southeast-1"

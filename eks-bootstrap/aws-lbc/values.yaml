@@ -1,0 +1,18 @@
+replicaCount: 1
+
+clusterName: eks-foundation
+region: ap-southeast-1
+
+resources: 
+  limits:
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Injected by terraform helm_release set{} — do not hardcode here
+vpcId: ""
+
+serviceAccount:
+  name: aws-load-balancer-controller
+  # No annotation needed — Pod Identity handles IAM
