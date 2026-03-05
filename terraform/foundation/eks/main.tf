@@ -31,6 +31,13 @@ resource "aws_ec2_tag" "pod_subnet_karpenter" {
   value       = local.cluster_name
 }
 
+resource "aws_ec2_tag" "public_subnet_elb" {
+  for_each    = toset(data.terraform_remote_state.networking.outputs.public_subnet_ids)
+  resource_id = each.value
+  key         = "kubernetes.io/role/elb"
+  value       = "1"
+}
+
 module "eks_karpenter" {
   source = "../../modules/eks-karpenter"
 

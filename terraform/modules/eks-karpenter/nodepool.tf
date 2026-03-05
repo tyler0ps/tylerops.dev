@@ -69,7 +69,7 @@ resource "kubectl_manifest" "karpenter_node_pool" {
 
             - key: karpenter.k8s.aws/instance-family
               operator: In
-              values: ["m6g", "c6g", "r6g", "m7g", "c7g", "r7g", "t4g"]
+              values: ["m6g", "c6g", "m7g", "c7g", "t4g"]
 
             - key: karpenter.k8s.aws/instance-size
               operator: In
