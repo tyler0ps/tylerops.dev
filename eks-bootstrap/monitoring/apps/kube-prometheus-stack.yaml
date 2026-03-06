@@ -103,6 +103,8 @@ spec:
 
         nodeExporter:
           enabled: true
+
+        prometheus-node-exporter:
           tolerations:
             - operator: Exists
           affinity:
