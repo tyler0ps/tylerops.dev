@@ -84,6 +84,26 @@ spec:
         minio:
           enabled: false
 
+        chunksCache:
+          enabled: true
+          allocatedMemory: 900
+          resources:
+            requests:
+              cpu: 50m
+              memory: 1Gi
+            limits:
+              memory: 1Gi
+
+        resultsCache:
+          enabled: true
+          allocatedMemory: 100
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 128Mi
+
         read:
           replicas: 0
         write:
@@ -109,6 +129,9 @@ spec:
         bloomGateway:
           replicas: 0
         gateway:
+          enabled: false
+
+        lokiCanary:
           enabled: false
 
   destination:
