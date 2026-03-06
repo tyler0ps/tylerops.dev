@@ -34,11 +34,11 @@ resource "aws_autoscaling_schedule" "nat_scale_down" {
 }
 
 # Scale up at 07:00 Vietnam (00:00 UTC) — bring NAT back online in the morning
-resource "aws_autoscaling_schedule" "nat_scale_up" {
-  scheduled_action_name  = "nat-scale-up"
-  autoscaling_group_name = module.nat.name
-  recurrence             = "0 0 * * *" # 07:00 Asia/Ho_Chi_Minh (UTC+7)
-  desired_capacity       = 1
-  min_size               = 1
-  max_size               = 1
-}
+# resource "aws_autoscaling_schedule" "nat_scale_up" {
+#   scheduled_action_name  = "nat-scale-up"
+#   autoscaling_group_name = module.nat.name
+#   recurrence             = "0 0 * * *" # 07:00 Asia/Ho_Chi_Minh (UTC+7)
+#   desired_capacity       = 1
+#   min_size               = 1
+#   max_size               = 1
+# }
