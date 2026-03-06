@@ -5,11 +5,14 @@ locals {
   karpenter_version = "1.8.5"
 
   chart_versions = {
-    aws_lbc      = "3.1.0"
-    cert_manager = "v1.19.4"
-    envoy        = "v1.6.4"
-    external_dns = "1.20.0"
-    argocd       = "9.4.7"
+    aws_lbc               = "3.1.0"
+    cert_manager          = "v1.19.4"
+    envoy                 = "v1.6.4"
+    external_dns          = "1.20.0"
+    argocd                = "9.4.7"
+    kube_prometheus_stack = "82.9.0"
+    loki                  = "6.53.0"
+    alloy                 = "1.6.1"
   }
 
   tags = {
