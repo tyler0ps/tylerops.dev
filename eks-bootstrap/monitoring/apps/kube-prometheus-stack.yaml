@@ -31,7 +31,7 @@ spec:
             auth.generic_oauth:
               name: authentik
               enabled: true
-              client_id: "E3u6xGhbc3vpqRJa1wXaRQYL2wCGDTOgCDItxVOD"
+              client_id: "SE4ynzuA9hAgQ3HFbNkg9TbPQ0Tu47CJGUpC8r2Z"
               client_secret: "$__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}"
               scopes: "openid profile email"
               auth_url: "https://auth.tylerops.dev/application/o/authorize/"
