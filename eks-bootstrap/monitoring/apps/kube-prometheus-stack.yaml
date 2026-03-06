@@ -103,6 +103,15 @@ spec:
 
         nodeExporter:
           enabled: true
+          tolerations:
+            - operator: Exists
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: karpenter.sh/nodepool
+                        operator: Exists
 
         kubeStateMetrics:
           enabled: true
