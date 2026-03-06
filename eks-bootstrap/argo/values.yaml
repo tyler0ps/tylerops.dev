@@ -11,6 +11,11 @@ server:
       labelSelector:
         matchLabels:
           app.kubernetes.io/name: argocd-server
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
 
 repoServer:
   replicas: 1
@@ -21,9 +26,26 @@ repoServer:
       labelSelector:
         matchLabels:
           app.kubernetes.io/name: argocd-repo-server
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+
+controller:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
 
 applicationSet:
   replicas: 1
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
 
 configs:
   cm:

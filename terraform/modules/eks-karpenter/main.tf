@@ -58,6 +58,14 @@ module "eks" {
         "karpenter.sh/controller" = "true"
       }
 
+      taints = {
+        CriticalAddonsOnly = {
+          key    = "CriticalAddonsOnly"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
+
       tags = {
         "karpenter.sh/discovery" = var.cluster_name
       }

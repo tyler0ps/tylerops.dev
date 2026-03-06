@@ -1,3 +1,18 @@
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: karpenter.sh/controller
+              operator: In
+              values:
+                - "true"
+
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+
 config:
 # -- EnvoyGateway configuration. Visit https://gateway.envoyproxy.io/docs/api/extension_types/#envoygateway to view all options.
   envoyGateway:
