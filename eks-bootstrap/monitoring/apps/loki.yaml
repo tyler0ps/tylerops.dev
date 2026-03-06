@@ -131,8 +131,11 @@ spec:
         gateway:
           enabled: false
 
-        # lokiCanary:
-        #   enabled: false
+        lokiCanary:
+          enabled: false
+
+        test:
+          enabled: false
 
   destination:
     server: https://kubernetes.default.svc

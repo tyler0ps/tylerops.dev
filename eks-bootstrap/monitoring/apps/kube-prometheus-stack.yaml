@@ -63,6 +63,16 @@ spec:
                   type: file
                   options:
                     path: /var/lib/grafana/dashboards/argocd
+                - name: kubernetes
+                  folder: Kubernetes
+                  type: file
+                  options:
+                    path: /var/lib/grafana/dashboards/kubernetes
+                - name: infrastructure
+                  folder: Infrastructure
+                  type: file
+                  options:
+                    path: /var/lib/grafana/dashboards/infrastructure
 
           dashboards:
             argocd:
@@ -70,6 +80,34 @@ spec:
                 gnetId: 19993
                 revision: 3
                 datasource: Prometheus
+            kubernetes:
+              kubernetes-views-global:
+                gnetId: 15759
+                revision: 37
+                datasource: Prometheus
+              kubernetes-views-nodes:
+                gnetId: 15760
+                revision: 35
+                datasource: Prometheus
+              kubernetes-views-namespaces:
+                gnetId: 15761
+                revision: 19
+                datasource: Prometheus
+              kubernetes-views-pods:
+                gnetId: 15762
+                revision: 32
+                datasource: Prometheus
+            infrastructure:
+              node-exporter-full:
+                gnetId: 1860
+                revision: 37
+                datasource: Prometheus
+              loki-logs:
+                gnetId: 13639
+                revision: 2
+                datasource:
+                  - name: DS_LOKI
+                    value: Loki
 
         # ---- Prometheus ----
         prometheus:
