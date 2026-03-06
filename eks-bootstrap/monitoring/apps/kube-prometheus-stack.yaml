@@ -19,26 +19,25 @@ spec:
           ingress:
             enabled: false # using HTTPRoute instead
 
-          # OAuth config via env vars (recommended by Authentik docs for Helm).
-          # Non-sensitive vars set here; client_secret comes from grafana-oauth Secret.
-          env:
-            GF_SERVER_ROOT_URL: "https://monitoring.tylerops.dev"
-            GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
-            GF_AUTH_GENERIC_OAUTH_NAME: "authentik"
-            GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "E3u6xGhbc3vpqRJa1wXaRQYL2wCGDTOgCDItxVOD"
-            GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
-            GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://auth.tylerops.dev/application/o/authorize/"
-            GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://auth.tylerops.dev/application/o/token/"
-            GF_AUTH_GENERIC_OAUTH_API_URL: "https://auth.tylerops.dev/application/o/userinfo/"
-            GF_AUTH_SIGNOUT_REDIRECT_URL: "https://auth.tylerops.dev/application/o/grafana/end-session/"
-            GF_AUTH_OAUTH_AUTO_LOGIN: "true"
-            # 'grafana-admins' → Admin, 'grafana-editors' → Editor, everyone else → Viewer
-            GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups[*], 'grafana-admins') && 'Admin' || contains(groups[*], 'grafana-editors') && 'Editor' || 'Viewer'"
-
           # Client secret from Kubernetes Secret created by Terraform
           envFromSecret: "grafana-oauth"
 
           grafana.ini:
+            server:
+              root_url: "https://monitoring.tylerops.dev"
+            auth:
+              signout_redirect_url: "https://auth.tylerops.dev/application/o/grafana/end-session/"
+              oauth_auto_login: true
+            auth.generic_oauth:
+              name: authentik
+              enabled: true
+              client_id: "E3u6xGhbc3vpqRJa1wXaRQYL2wCGDTOgCDItxVOD"
+              client_secret: "$__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}"
+              scopes: "openid profile email"
+              auth_url: "https://auth.tylerops.dev/application/o/authorize/"
+              token_url: "https://auth.tylerops.dev/application/o/token/"
+              api_url: "https://auth.tylerops.dev/application/o/userinfo/"
+              role_attribute_path: "contains(groups[*], 'grafana-admins') && 'Admin' || contains(groups[*], 'grafana-editors') && 'Editor' || 'Viewer'"
             analytics:
               check_for_updates: false
               reporting_enabled: false
