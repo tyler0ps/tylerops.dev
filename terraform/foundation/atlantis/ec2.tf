@@ -32,7 +32,7 @@ resource "aws_launch_template" "atlantis" {
   block_device_mappings {
     device_name = "/dev/xvda"
     ebs {
-      volume_size           = 4
+      volume_size           = 8
       volume_type           = "gp3"
       encrypted             = true
       delete_on_termination = true
