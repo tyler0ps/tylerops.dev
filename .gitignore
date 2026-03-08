@@ -10,7 +10,6 @@ docs/.vitepress/dist/
 *.tfstate
 *.tfstate.*
 *.tfplan
-.terraform.lock.hcl
 **/terraform.tfvars
 
 # IDE
