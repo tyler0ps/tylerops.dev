@@ -212,6 +212,6 @@ resource "aws_autoscaling_schedule" "authentik_scale_up" {
   autoscaling_group_name = aws_autoscaling_group.authentik.name
   recurrence             = "0 23 * * *" # 06:00 Asia/Ho_Chi_Minh (UTC+7)
   desired_capacity       = 1
-  min_size               = 1
+  min_size               = 0
   max_size               = 1
 }
