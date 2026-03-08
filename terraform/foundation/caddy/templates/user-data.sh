@@ -63,10 +63,19 @@ aws route53 change-resource-record-sets \
           \"TTL\": 300,
           \"ResourceRecords\": [{\"Value\": \"$PUBLIC_IP\"}]
         }
+      },
+      {
+        \"Action\": \"UPSERT\",
+        \"ResourceRecordSet\": {
+          \"Name\": \"${plane_domain}\",
+          \"Type\": \"A\",
+          \"TTL\": 300,
+          \"ResourceRecords\": [{\"Value\": \"$PUBLIC_IP\"}]
+        }
       }
     ]
   }"
-echo "Route53 updated: ${atlantis_domain}, ${authentik_domain} → $PUBLIC_IP"
+echo "Route53 updated: ${atlantis_domain}, ${authentik_domain}, ${plane_domain} → $PUBLIC_IP"
 
 # =============================================================================
 # Read basic auth credentials from SSM
@@ -123,6 +132,14 @@ ${atlantis_domain} {
 ${authentik_domain} {
     reverse_proxy authentik.tylerops.internal:9000
 }
+
+${plane_domain} {
+    reverse_proxy plane.tylerops.internal:80 {
+        header_up Host {http.reverse_proxy.upstream.host}
+        header_up X-Real-IP {remote_host}
+    }
+}
+
 EOF
 
 # =============================================================================

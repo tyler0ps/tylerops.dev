@@ -21,3 +21,8 @@ variable "acme_email" {
   description = "Email for Let's Encrypt ACME account registration"
   default     = "me@tylerops.dev"
 }
+
+variable "plane_domain" {
+  description = "Public domain for Plane"
+  default     = "capitalplace.tylerops.dev"
+}
