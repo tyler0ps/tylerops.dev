@@ -7,15 +7,18 @@ variable "bot_token_ssm_path" {
   default     = "/telegram-bot/token"
 }
 
-variable "allowed_chat_id" {
-  description = "Telegram chat_id allowed to execute commands (get from @userinfobot)"
-  type        = string
-}
-
 variable "authentik_asg_name" {
   default = "authentik-asg"
 }
 
 variable "nat_asg_name" {
   default = "management-nat"
+}
+
+variable "caddy_asg_name" {
+  default = "caddy-asg"
+}
+
+variable "atlantis_asg_name" {
+  default = "atlantis-asg"
 }

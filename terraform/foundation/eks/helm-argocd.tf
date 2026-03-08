@@ -16,7 +16,7 @@ resource "helm_release" "argocd" {
   # Dex Authentik client secret — passed securely, not in values.yaml
   set_sensitive = [{
     name  = "configs.secret.extra.dex\\.authentik\\.clientSecret"
-    value = var.argocd_dex_client_secret
+    value = data.aws_ssm_parameter.argocd_dex_client_secret.value
   }]
 
   depends_on = [
