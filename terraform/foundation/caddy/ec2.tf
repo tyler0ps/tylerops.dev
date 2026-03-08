@@ -28,6 +28,7 @@ resource "aws_launch_template" "caddy" {
     authentik_domain = var.authentik_domain
     hosted_zone_id   = data.aws_route53_zone.main.zone_id
     cert_bucket      = aws_s3_bucket.caddy_certs.bucket
+    acme_email       = var.acme_email
   }))
 
   block_device_mappings {

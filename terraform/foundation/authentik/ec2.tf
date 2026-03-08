@@ -47,15 +47,6 @@ resource "aws_ebs_volume" "authentik_data" {
   }
 }
 
-# Elastic IP (static)
-resource "aws_eip" "authentik" {
-  domain = "vpc"
-
-  tags = {
-    Name = "authentik-eip"
-  }
-}
-
 # Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
 resource "aws_ebs_volume" "plane_data" {
   availability_zone = "${var.aws_region}a"
@@ -88,19 +79,14 @@ resource "aws_launch_template" "authentik" {
   }
 
   network_interfaces {
-    associate_public_ip_address = true
+    associate_public_ip_address = false
     security_groups             = [aws_security_group.authentik.id]
   }
 
-  user_data = base64encode(templatefile("${path.module}/templates/user-data-auth-plane.sh", {
-    ebs_volume_id = aws_ebs_volume.authentik_data.id
-    eip_alloc_id  = aws_eip.authentik.id
-    aws_region    = var.aws_region
-    domain        = var.domain_name
-
-    # plane
-    plane_ebs_volume_id = aws_ebs_volume.plane_data.id
-    plane_domain        = var.domain_name_plane
+  user_data = base64encode(templatefile("${path.module}/templates/user-data-ami.sh", {
+    ebs_volume_id    = aws_ebs_volume.authentik_data.id
+    aws_region       = var.aws_region
+    internal_zone_id = data.terraform_remote_state.networking.outputs.internal_zone_id
   }))
 
   tag_specifications {
@@ -148,7 +134,7 @@ resource "aws_launch_template" "authentik" {
 
 resource "aws_autoscaling_group" "authentik" {
   name                = "authentik-asg"
-  vpc_zone_identifier = [data.terraform_remote_state.networking.outputs.public_subnet_id]
+  vpc_zone_identifier = [tolist(data.terraform_remote_state.networking.outputs.private_subnet_ids)[0]]
   desired_capacity    = 1
   min_size            = 0
   max_size            = 1

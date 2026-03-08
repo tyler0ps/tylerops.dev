@@ -3,13 +3,14 @@ set -e
 
 # =============================================================================
 # Authentik EC2 Bootstrap Script (AMI-based)
-# Docker, Compose, Caddy, and Authentik config are already in the AMI.
-# This script: self-attaches EBS + EIP, mounts volume, starts services.
+# Docker, Compose, and Authentik config are already in the AMI.
+# This script: mounts EBS data volume and starts Authentik.
+# No EIP (private subnet behind reverse proxy). No Caddy.
 # =============================================================================
 
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
-echo "=== Starting Authentik (AMI-based boot, ASG mode) ==="
+echo "=== Starting Authentik (AMI-based boot) ==="
 echo "Timestamp: $(date)"
 
 # =============================================================================
@@ -38,35 +39,41 @@ systemctl start docker
 systemctl enable docker
 
 # =============================================================================
-# Get Instance Metadata (IMDSv2)
+# Get Instance Metadata (IMDSv2) — needed for EBS attach
 # =============================================================================
 echo "=== Getting instance metadata ==="
 
 TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
 AZ=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/availability-zone)
+PRIVATE_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
 
 echo "Instance ID: $INSTANCE_ID"
 echo "Availability Zone: $AZ"
+echo "Private IP: $PRIVATE_IP"
 
 # =============================================================================
-# Associate Elastic IP
+# Register Internal DNS
+# TTL=30 ensures fast failover on spot replacement.
 # =============================================================================
-echo "=== Associating Elastic IP ==="
+echo "=== Registering internal DNS ==="
 
-EIP_ALLOC_ID="${eip_alloc_id}"
+aws route53 change-resource-record-sets \
+  --hosted-zone-id "${internal_zone_id}" \
+  --change-batch "{
+    \"Changes\": [{
+      \"Action\": \"UPSERT\",
+      \"ResourceRecordSet\": {
+        \"Name\": \"authentik.tylerops.internal\",
+        \"Type\": \"A\",
+        \"TTL\": 30,
+        \"ResourceRecords\": [{\"Value\": \"$PRIVATE_IP\"}]
+      }
+    }]
+  }" \
+  --region ${aws_region}
 
-CURRENT_ASSOC=$(aws ec2 describe-addresses --allocation-ids $EIP_ALLOC_ID --region ${aws_region} --query 'Addresses[0].AssociationId' --output text 2>/dev/null || echo "None")
-
-if [ "$CURRENT_ASSOC" != "None" ] && [ -n "$CURRENT_ASSOC" ]; then
-  echo "Disassociating EIP from previous instance..."
-  aws ec2 disassociate-address --association-id $CURRENT_ASSOC --region ${aws_region} || true
-  sleep 2
-fi
-
-echo "Associating EIP to this instance..."
-aws ec2 associate-address --instance-id $INSTANCE_ID --allocation-id $EIP_ALLOC_ID --region ${aws_region}
-echo "EIP associated successfully"
+echo "Internal DNS registered: authentik.tylerops.internal -> $PRIVATE_IP"
 
 # =============================================================================
 # Attach EBS Data Volume
@@ -152,19 +159,9 @@ else
     echo "$DATA_DEVICE $DATA_MOUNT xfs defaults,nofail 0 2" >> /etc/fstab
   fi
 
-  # Create data directories if they don't exist
-  mkdir -p $DATA_MOUNT/{postgres,redis,media,certs,backups,custom-templates,data,caddy/data,caddy/config}
-  chown -R caddy:caddy $DATA_MOUNT/caddy
+  # Create data directories
+  mkdir -p $DATA_MOUNT/{postgres,redis,media,certs,backups,custom-templates,data}
 fi
-
-# =============================================================================
-# Start Caddy (reverse proxy + SSL)
-# Caddyfile and systemd service are baked into the AMI.
-# Cert storage is on EBS — survives spot replacements.
-# =============================================================================
-echo "=== Starting Caddy ==="
-systemctl restart caddy
-echo "Caddy started"
 
 # =============================================================================
 # Start Authentik
@@ -177,14 +174,13 @@ echo "=== Starting Authentik ==="
 AUTHENTIK_DIR="/opt/authentik"
 
 if [ -d "$AUTHENTIK_DIR" ]; then
-  # Symlink .env from EBS — docker compose reads it for $${VAR} interpolation
+  # Symlink .env from EBS — docker compose reads it for variable interpolation
   ln -sf /opt/authentik-data/.env $AUTHENTIK_DIR/.env
 
   cd $AUTHENTIK_DIR
 
-  # Stop any containers that docker daemon auto-started before EBS was mounted.
-  # Without this, postgres would be using an empty bind mount on root volume
-  # instead of the EBS data directory.
+  # Stop any containers docker daemon auto-started before EBS was mounted.
+  # Without this, postgres would use an empty bind mount on root volume.
   docker compose down 2>/dev/null || true
 
   docker compose up -d
@@ -198,4 +194,3 @@ else
 fi
 
 echo "=== Authentik startup complete ==="
-echo "Access at: https://${domain}"

@@ -25,7 +25,7 @@ resource "aws_iam_role_policy_attachment" "ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-# EIP self-attach at boot
+# EBS self-attach + internal DNS registration at boot
 resource "aws_iam_role_policy" "ec2_self_attach" {
   name = "authentik-ec2-self-attach"
   role = aws_iam_role.authentik.id
@@ -34,14 +34,10 @@ resource "aws_iam_role_policy" "ec2_self_attach" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "EIPManagement"
+        Sid    = "Route53UpsertInternal"
         Effect = "Allow"
-        Action = [
-          "ec2:AssociateAddress",
-          "ec2:DisassociateAddress",
-          "ec2:DescribeAddresses"
-        ]
-        Resource = "*"
+        Action = "route53:ChangeResourceRecordSets"
+        Resource = "arn:aws:route53:::hostedzone/*"
       },
       {
         Sid    = "EBSVolumeManagement"

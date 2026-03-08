@@ -1,7 +1,7 @@
-output "elastic_ip" {
-  description = "Elastic IP address of Authentik instance"
-  value       = aws_eip.authentik.public_ip
-}
+# output "elastic_ip" {
+#   description = "Elastic IP address of Authentik instance"
+#   value       = aws_eip.authentik.public_ip
+# }
 
 output "authentik_url" {
   description = "URL to access Authentik"

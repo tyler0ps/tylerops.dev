@@ -7,24 +7,15 @@ resource "aws_security_group" "authentik" {
   description = "Security group for Authentik EC2 instance"
   vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
 
-  # No SSH - use SSM Session Manager instead
+  # No SSH — use SSM Session Manager instead
 
-  # HTTP - for Caddy (Let's Encrypt validation)
+  # Authentik HTTP — only from Caddy reverse proxy
   ingress {
-    description = "HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # HTTPS - for Caddy
-  ingress {
-    description = "HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "Authentik HTTP from Caddy"
+    from_port       = 9000
+    to_port         = 9000
+    protocol        = "tcp"
+    security_groups = [data.terraform_remote_state.caddy.outputs.security_group_id]
   }
 
   # All outbound traffic (required for SSM + package installs)

@@ -16,3 +16,8 @@ variable "authentik_domain" {
   description = "Authentik domain for forward auth"
   default     = "auth.tylerops.dev"
 }
+
+variable "acme_email" {
+  description = "Email for Let's Encrypt ACME account registration"
+  default     = "me@tylerops.dev"
+}

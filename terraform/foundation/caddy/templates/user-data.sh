@@ -45,17 +45,28 @@ echo "=== Updating Route53 ==="
 aws route53 change-resource-record-sets \
   --hosted-zone-id "${hosted_zone_id}" \
   --change-batch "{
-    \"Changes\": [{
-      \"Action\": \"UPSERT\",
-      \"ResourceRecordSet\": {
-        \"Name\": \"${atlantis_domain}\",
-        \"Type\": \"A\",
-        \"TTL\": 300,
-        \"ResourceRecords\": [{\"Value\": \"$PUBLIC_IP\"}]
+    \"Changes\": [
+      {
+        \"Action\": \"UPSERT\",
+        \"ResourceRecordSet\": {
+          \"Name\": \"${atlantis_domain}\",
+          \"Type\": \"A\",
+          \"TTL\": 300,
+          \"ResourceRecords\": [{\"Value\": \"$PUBLIC_IP\"}]
+        }
+      },
+      {
+        \"Action\": \"UPSERT\",
+        \"ResourceRecordSet\": {
+          \"Name\": \"${authentik_domain}\",
+          \"Type\": \"A\",
+          \"TTL\": 300,
+          \"ResourceRecords\": [{\"Value\": \"$PUBLIC_IP\"}]
+        }
       }
-    }]
+    ]
   }"
-echo "Route53 updated: ${atlantis_domain} → $PUBLIC_IP"
+echo "Route53 updated: ${atlantis_domain}, ${authentik_domain} → $PUBLIC_IP"
 
 # =============================================================================
 # Read basic auth credentials from SSM
@@ -82,6 +93,8 @@ echo "=== Writing Caddyfile ==="
 
 cat > /etc/caddy/Caddyfile << EOF
 {
+    email ${acme_email}
+
     storage s3 {
         host             s3.${aws_region}.amazonaws.com
         bucket           ${cert_bucket}
@@ -105,6 +118,10 @@ ${atlantis_domain} {
 
         reverse_proxy atlantis.tylerops.internal:4141
     }
+}
+
+${authentik_domain} {
+    reverse_proxy authentik.tylerops.internal:9000
 }
 EOF
 

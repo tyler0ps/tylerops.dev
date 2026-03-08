@@ -1,19 +1,16 @@
 # =============================================================================
-# Route53 DNS Record
+# Internal DNS record — managed by Terraform as placeholder (0.0.0.0)
+# Actual IP is updated on boot via user-data (UPSERT with private IP)
 # =============================================================================
 
-resource "aws_route53_record" "authentik" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.domain_name
+resource "aws_route53_record" "authentik_internal" {
+  zone_id = data.terraform_remote_state.networking.outputs.internal_zone_id
+  name    = "authentik.tylerops.internal"
   type    = "A"
-  ttl     = 300
-  records = [aws_eip.authentik.public_ip]
-}
+  ttl     = 30
+  records = ["0.0.0.0"]
 
-resource "aws_route53_record" "plane" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.domain_name_plane
-  type    = "A"
-  ttl     = 300
-  records = [aws_eip.authentik.public_ip]
+  lifecycle {
+    ignore_changes = [records]
+  }
 }
