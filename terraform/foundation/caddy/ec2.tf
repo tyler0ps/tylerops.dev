@@ -114,3 +114,23 @@ resource "aws_autoscaling_group" "caddy" {
     create_before_destroy = true
   }
 }
+
+# Scale down at 22:00 Vietnam (15:00 UTC) — to save cost overnight
+resource "aws_autoscaling_schedule" "caddy_scale_down" {
+  scheduled_action_name  = "caddy-scale-down"
+  autoscaling_group_name = aws_autoscaling_group.caddy.name
+  recurrence             = "0 15 * * *" # 22:00 Asia/Ho_Chi_Minh (UTC+7)
+  desired_capacity       = 0
+  min_size               = 0
+  max_size               = 1
+}
+
+# Scale up at 06:00 Vietnam (23:00 UTC)
+# resource "aws_autoscaling_schedule" "caddy_scale_up" {
+#   scheduled_action_name  = "caddy-scale-up"
+#   autoscaling_group_name = aws_autoscaling_group.caddy.name
+#   recurrence             = "0 23 * * *" # 06:00 Asia/Ho_Chi_Minh (UTC+7)
+#   desired_capacity       = 1
+#   min_size               = 0
+#   max_size               = 1
+# }
