@@ -136,6 +136,6 @@ resource "kubernetes_secret_v1" "grafana_oauth" {
 
   data = {
     # Grafana reads this env var via envFromSecret → grafana.ini client_secret = $__env{...}
-    GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET = var.grafana_oauth_client_secret
+    GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET = data.aws_ssm_parameter.grafana_oauth_client_secret.value
   }
 }

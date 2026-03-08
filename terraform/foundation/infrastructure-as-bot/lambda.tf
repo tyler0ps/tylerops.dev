@@ -21,7 +21,9 @@ resource "aws_lambda_function" "bot" {
       BOT_TOKEN_SSM_PATH = var.bot_token_ssm_path
       AUTHENTIK_ASG_NAME = var.authentik_asg_name
       NAT_ASG_NAME       = var.nat_asg_name
-      ALLOWED_CHAT_ID    = var.allowed_chat_id
+      CADDY_ASG_NAME     = var.caddy_asg_name
+      ATLANTIS_ASG_NAME  = var.atlantis_asg_name
+      ALLOWED_CHAT_ID    = data.aws_ssm_parameter.allowed_chat_id.value
     }
   }
 }

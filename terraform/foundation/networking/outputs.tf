@@ -35,6 +35,11 @@ output "private_subnet_ids" {
   value       = [aws_subnet.private_a.id, aws_subnet.private_b.id]
 }
 
+output "internal_zone_id" {
+  description = "Private Route53 hosted zone ID for tylerops.internal"
+  value       = aws_route53_zone.internal.zone_id
+}
+
 output "public_subnet_ids" {
   description = "Public subnet IDs (az-a, az-b)"
   value       = [aws_subnet.public.id, aws_subnet.public_b.id]

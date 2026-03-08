@@ -30,6 +30,8 @@ data "aws_iam_policy_document" "lambda_policy" {
     resources = [
       "arn:aws:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.authentik_asg_name}",
       "arn:aws:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.nat_asg_name}",
+      "arn:aws:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.caddy_asg_name}",
+      "arn:aws:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.atlantis_asg_name}",
     ]
   }
 
