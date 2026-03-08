@@ -47,22 +47,6 @@ resource "aws_ebs_volume" "authentik_data" {
   }
 }
 
-# Separate EBS Volume for persistent data (PostgreSQL, MinIO, Redis)
-resource "aws_ebs_volume" "plane_data" {
-  availability_zone = "${var.aws_region}a"
-  size              = 2
-  type              = "gp3"
-  encrypted         = true
-
-  tags = {
-    Name = "plane-data-volume"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
 # =============================================================================
 # Launch Template
 # =============================================================================
