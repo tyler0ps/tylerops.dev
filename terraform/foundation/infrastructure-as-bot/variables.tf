@@ -22,3 +22,7 @@ variable "caddy_asg_name" {
 variable "atlantis_asg_name" {
   default = "atlantis-asg"
 }
+
+variable "plane_asg_name" {
+  default = "plane-asg"
+}

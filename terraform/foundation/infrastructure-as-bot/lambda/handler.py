@@ -11,6 +11,7 @@ AUTHENTIK_ASG = os.environ["AUTHENTIK_ASG_NAME"]
 NAT_ASG = os.environ["NAT_ASG_NAME"]
 CADDY_ASG = os.environ["CADDY_ASG_NAME"]
 ATLANTIS_ASG = os.environ["ATLANTIS_ASG_NAME"]
+PLANE_ASG = os.environ["PLANE_ASG_NAME"]
 ALLOWED_CHAT_ID = os.environ["ALLOWED_CHAT_ID"]
 
 _ssm = boto3.client("ssm")
@@ -23,20 +24,33 @@ ICT = timezone(timedelta(hours=7))
 HELP_TEXT = """🏗 Infrastructure Manager
 
 🔐 Authentik (auth.tylerops.dev)
-  /authentik_up   — start instance
-  /authentik_down — stop instance
+  /authentik_up      — start instance
+  /authentik_down    — stop instance
+  /authentik_refresh — replace instance
 
 🌐 NAT Instance (private subnet egress)
-  /nat_up   — enable internet for private subnets
-  /nat_down — disable NAT
+  /nat_up      — enable internet for private subnets
+  /nat_down    — disable NAT
+  /nat_refresh — replace NAT instance
 
-🔀 Caddy (atlantis.tylerops.dev reverse proxy)
-  /caddy_up   — start Caddy
-  /caddy_down — stop Caddy
+🔀 Caddy (reverse proxy)
+  /caddy_up      — start Caddy
+  /caddy_down    — stop Caddy
+  /caddy_refresh — replace Caddy instance
 
 🤖 Atlantis (CI/CD)
-  /atlantis_up   — start Atlantis
-  /atlantis_down — stop Atlantis
+  /atlantis_up      — start Atlantis
+  /atlantis_down    — stop Atlantis
+  /atlantis_refresh — replace Atlantis instance
+
+✈️ Plane (capitalplace.tylerops.dev)
+  /plane_up      — start Plane
+  /plane_down    — stop Plane
+  /plane_refresh — replace Plane instance
+
+🌍 All Services
+  /all_up   — start all services
+  /all_down — stop all services
 
 📊 Overview
   /status — current state of all services
@@ -48,35 +62,50 @@ HELP_KEYBOARD = {
         [
             {"text": "🔐 Authentik ⬆️", "callback_data": "authentik_up"},
             {"text": "🔐 Authentik ⬇️", "callback_data": "authentik_down"},
+            {"text": "🔐 🔄", "callback_data": "authentik_refresh"},
         ],
         [
             {"text": "🌐 NAT ⬆️", "callback_data": "nat_up"},
             {"text": "🌐 NAT ⬇️", "callback_data": "nat_down"},
+            {"text": "🌐 🔄", "callback_data": "nat_refresh"},
         ],
         [
             {"text": "🔀 Caddy ⬆️", "callback_data": "caddy_up"},
             {"text": "🔀 Caddy ⬇️", "callback_data": "caddy_down"},
+            {"text": "🔀 🔄", "callback_data": "caddy_refresh"},
         ],
         [
             {"text": "🤖 Atlantis ⬆️", "callback_data": "atlantis_up"},
             {"text": "🤖 Atlantis ⬇️", "callback_data": "atlantis_down"},
+            {"text": "🤖 🔄", "callback_data": "atlantis_refresh"},
+        ],
+        [
+            {"text": "✈️ Plane ⬆️", "callback_data": "plane_up"},
+            {"text": "✈️ Plane ⬇️", "callback_data": "plane_down"},
+            {"text": "✈️ 🔄", "callback_data": "plane_refresh"},
+        ],
+        [
+            {"text": "🟢 All ON", "callback_data": "all_up"},
+            {"text": "🔴 All OFF", "callback_data": "all_down"},
         ],
         [{"text": "📊 Status", "callback_data": "status"}],
     ]
 }
 
-_ASG_ORDER = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG]
+_ASG_ORDER = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG]
 _ASG_SHORT = {
     AUTHENTIK_ASG: "🔐 Authentik",
     NAT_ASG: "🌐 NAT",
     CADDY_ASG: "🔀 Caddy",
     ATLANTIS_ASG: "🤖 Atlantis",
+    PLANE_ASG: "✈️ Plane",
 }
 _ASG_CMD = {
     AUTHENTIK_ASG: "authentik",
     NAT_ASG: "nat",
     CADDY_ASG: "caddy",
     ATLANTIS_ASG: "atlantis",
+    PLANE_ASG: "plane",
 }
 
 
@@ -120,6 +149,15 @@ def scale(asg_name: str, desired: int) -> bool:
     return True
 
 
+def refresh(asg_name: str) -> None:
+    """Trigger an instance refresh (rolling replacement) on the ASG."""
+    _asg.start_instance_refresh(
+        AutoScalingGroupName=asg_name,
+        Strategy="Rolling",
+        Preferences={"MinHealthyPercentage": 0},
+    )
+
+
 def _format_uptime(launch_time: datetime) -> str:
     delta = datetime.now(tz=timezone.utc) - launch_time
     h, rem = divmod(int(delta.total_seconds()), 3600)
@@ -131,13 +169,14 @@ def _format_uptime(launch_time: datetime) -> str:
 
 def get_status() -> tuple[str, dict]:
     resp = _asg.describe_auto_scaling_groups(
-        AutoScalingGroupNames=[AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG]
+        AutoScalingGroupNames=[AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG]
     )
     labels = {
         AUTHENTIK_ASG: "🔐 Authentik (auth.tylerops.dev)",
         NAT_ASG: "🌐 NAT (private subnet egress)",
-        CADDY_ASG: "🔀 Caddy (atlantis.tylerops.dev proxy)",
+        CADDY_ASG: "🔀 Caddy (reverse proxy)",
         ATLANTIS_ASG: "🤖 Atlantis (CI/CD)",
+        PLANE_ASG: "✈️ Plane (capitalplace.tylerops.dev)",
     }
 
     all_instance_ids = [
@@ -188,7 +227,7 @@ def get_status() -> tuple[str, dict]:
 
         lines.append(block)
 
-    # Build dynamic keyboard: stopped → show ⬆️, running/starting → show ⬇️
+    # Build dynamic keyboard: stopped → show ⬆️, running/starting → show ⬇️ + 🔄
     keyboard_rows = []
     for asg in _ASG_ORDER:
         short = _ASG_SHORT[asg]
@@ -197,8 +236,16 @@ def get_status() -> tuple[str, dict]:
         if state == "stopped":
             keyboard_rows.append([{"text": f"{short} ⬆️ Start", "callback_data": f"{cmd}_up"}])
         else:
-            keyboard_rows.append([{"text": f"{short} ⬇️ Stop", "callback_data": f"{cmd}_down"}])
-    keyboard_rows.append([{"text": "🔄 Refresh", "callback_data": "status"}])
+            keyboard_rows.append([
+                {"text": f"{short} ⬇️ Stop", "callback_data": f"{cmd}_down"},
+                {"text": "🔄 Refresh", "callback_data": f"{cmd}_refresh"},
+            ])
+
+    keyboard_rows.append([
+        {"text": "🟢 All ON", "callback_data": "all_up"},
+        {"text": "🔴 All OFF", "callback_data": "all_down"},
+    ])
+    keyboard_rows.append([{"text": "📊 Refresh Status", "callback_data": "status"}])
 
     return "\n\n".join(lines), {"inline_keyboard": keyboard_rows}
 
@@ -212,54 +259,88 @@ def _down_keyboard(cmd_prefix: str, label: str) -> dict:
 
 
 def process_command(chat_id: str, cmd: str) -> None:
+    # --- Authentik ---
     if cmd == "authentik_up":
         changed = scale(AUTHENTIK_ASG, 1)
-        if changed:
-            send_message(chat_id, "🔐 Authentik: starting...\nReady in ~1-2 min at auth.tylerops.dev", _up_keyboard("authentik", "Authentik"))
-        else:
-            send_message(chat_id, "🔐 Authentik: already running", _up_keyboard("authentik", "Authentik"))
+        msg = "🔐 Authentik: starting...\nReady in ~1-2 min at auth.tylerops.dev" if changed else "🔐 Authentik: already running"
+        send_message(chat_id, msg, _up_keyboard("authentik", "Authentik"))
     elif cmd == "authentik_down":
         changed = scale(AUTHENTIK_ASG, 0)
-        if changed:
-            send_message(chat_id, "🔐 Authentik: stopping...\nauth.tylerops.dev will be unavailable", _down_keyboard("authentik", "Authentik"))
-        else:
-            send_message(chat_id, "🔐 Authentik: already stopped", _down_keyboard("authentik", "Authentik"))
+        msg = "🔐 Authentik: stopping...\nauth.tylerops.dev will be unavailable" if changed else "🔐 Authentik: already stopped"
+        send_message(chat_id, msg, _down_keyboard("authentik", "Authentik"))
+    elif cmd == "authentik_refresh":
+        refresh(AUTHENTIK_ASG)
+        send_message(chat_id, "🔐 Authentik: replacing instance...\nNew instance will be ready in ~2 min", _up_keyboard("authentik", "Authentik"))
+
+    # --- NAT ---
     elif cmd == "nat_up":
         changed = scale(NAT_ASG, 1)
-        if changed:
-            send_message(chat_id, "🌐 NAT: starting...\nPrivate subnet egress available in ~1 min", _up_keyboard("nat", "NAT"))
-        else:
-            send_message(chat_id, "🌐 NAT: already running", _up_keyboard("nat", "NAT"))
+        msg = "🌐 NAT: starting...\nPrivate subnet egress available in ~1 min" if changed else "🌐 NAT: already running"
+        send_message(chat_id, msg, _up_keyboard("nat", "NAT"))
     elif cmd == "nat_down":
         changed = scale(NAT_ASG, 0)
-        if changed:
-            send_message(chat_id, "🌐 NAT: stopping...\nPrivate subnet internet access disabled", _down_keyboard("nat", "NAT"))
-        else:
-            send_message(chat_id, "🌐 NAT: already stopped", _down_keyboard("nat", "NAT"))
+        msg = "🌐 NAT: stopping...\nPrivate subnet internet access disabled" if changed else "🌐 NAT: already stopped"
+        send_message(chat_id, msg, _down_keyboard("nat", "NAT"))
+    elif cmd == "nat_refresh":
+        refresh(NAT_ASG)
+        send_message(chat_id, "🌐 NAT: replacing instance...", _up_keyboard("nat", "NAT"))
+
+    # --- Caddy ---
     elif cmd == "caddy_up":
         changed = scale(CADDY_ASG, 1)
-        if changed:
-            send_message(chat_id, "🔀 Caddy: starting...\natlantis.tylerops.dev available in ~1 min", _up_keyboard("caddy", "Caddy"))
-        else:
-            send_message(chat_id, "🔀 Caddy: already running", _up_keyboard("caddy", "Caddy"))
+        msg = "🔀 Caddy: starting...\nProxy available in ~1 min" if changed else "🔀 Caddy: already running"
+        send_message(chat_id, msg, _up_keyboard("caddy", "Caddy"))
     elif cmd == "caddy_down":
         changed = scale(CADDY_ASG, 0)
-        if changed:
-            send_message(chat_id, "🔀 Caddy: stopping...\natlantis.tylerops.dev will be unreachable", _down_keyboard("caddy", "Caddy"))
-        else:
-            send_message(chat_id, "🔀 Caddy: already stopped", _down_keyboard("caddy", "Caddy"))
+        msg = "🔀 Caddy: stopping...\nAll proxied domains will be unreachable" if changed else "🔀 Caddy: already stopped"
+        send_message(chat_id, msg, _down_keyboard("caddy", "Caddy"))
+    elif cmd == "caddy_refresh":
+        refresh(CADDY_ASG)
+        send_message(chat_id, "🔀 Caddy: replacing instance...", _up_keyboard("caddy", "Caddy"))
+
+    # --- Atlantis ---
     elif cmd == "atlantis_up":
         changed = scale(ATLANTIS_ASG, 1)
-        if changed:
-            send_message(chat_id, "🤖 Atlantis: starting...\nReady in ~1-2 min", _up_keyboard("atlantis", "Atlantis"))
-        else:
-            send_message(chat_id, "🤖 Atlantis: already running", _up_keyboard("atlantis", "Atlantis"))
+        msg = "🤖 Atlantis: starting...\nReady in ~1-2 min" if changed else "🤖 Atlantis: already running"
+        send_message(chat_id, msg, _up_keyboard("atlantis", "Atlantis"))
     elif cmd == "atlantis_down":
         changed = scale(ATLANTIS_ASG, 0)
-        if changed:
-            send_message(chat_id, "🤖 Atlantis: stopping...", _down_keyboard("atlantis", "Atlantis"))
+        msg = "🤖 Atlantis: stopping..." if changed else "🤖 Atlantis: already stopped"
+        send_message(chat_id, msg, _down_keyboard("atlantis", "Atlantis"))
+    elif cmd == "atlantis_refresh":
+        refresh(ATLANTIS_ASG)
+        send_message(chat_id, "🤖 Atlantis: replacing instance...", _up_keyboard("atlantis", "Atlantis"))
+
+    # --- Plane ---
+    elif cmd == "plane_up":
+        changed = scale(PLANE_ASG, 1)
+        msg = "✈️ Plane: starting...\nReady in ~2-3 min at capitalplace.tylerops.dev" if changed else "✈️ Plane: already running"
+        send_message(chat_id, msg, _up_keyboard("plane", "Plane"))
+    elif cmd == "plane_down":
+        changed = scale(PLANE_ASG, 0)
+        msg = "✈️ Plane: stopping...\ncapitalplace.tylerops.dev will be unavailable" if changed else "✈️ Plane: already stopped"
+        send_message(chat_id, msg, _down_keyboard("plane", "Plane"))
+    elif cmd == "plane_refresh":
+        refresh(PLANE_ASG)
+        send_message(chat_id, "✈️ Plane: replacing instance...\nReady in ~2-3 min", _up_keyboard("plane", "Plane"))
+
+    # --- All ON / All OFF ---
+    elif cmd == "all_up":
+        asgs = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG]
+        started = [_ASG_SHORT[a] for a in asgs if scale(a, 1)]
+        if started:
+            send_message(chat_id, "🟢 Starting all services:\n" + "\n".join(f"  {s}" for s in started))
         else:
-            send_message(chat_id, "🤖 Atlantis: already stopped", _down_keyboard("atlantis", "Atlantis"))
+            send_message(chat_id, "🟢 All services already running")
+    elif cmd == "all_down":
+        asgs = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG]
+        stopped = [_ASG_SHORT[a] for a in asgs if scale(a, 0)]
+        if stopped:
+            send_message(chat_id, "🔴 Stopping all services:\n" + "\n".join(f"  {s}" for s in stopped))
+        else:
+            send_message(chat_id, "🔴 All services already stopped")
+
+    # --- Status / Help ---
     elif cmd == "status":
         text, keyboard = get_status()
         send_message(chat_id, text, keyboard)
