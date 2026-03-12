@@ -1,0 +1,10 @@
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: envoy-gateway
+  namespace: envoy-gateway-system
+spec:
+  serviceRef:
+    name: envoy-envoy-gateway-system-main-nlb-96f6f41e
+    port: 80
+  targetGroupARN: "arn:aws:elasticloadbalancing:ap-southeast-1:382027875658:targetgroup/eks-cilium-envoy/cd2381fe6411bd23"
