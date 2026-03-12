@@ -6,7 +6,13 @@ variable "cluster_name" {
 variable "cluster_version" {
   description = "Kubernetes version"
   type        = string
-  default     = "1.34"
+  default     = "1.35"
+}
+
+variable "karpenter_namespace" {
+  description = "Karpenter namespace"
+  type        = string
+  default     = "kube-system"
 }
 
 variable "region" {

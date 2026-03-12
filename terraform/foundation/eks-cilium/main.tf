@@ -28,6 +28,12 @@ resource "aws_ec2_tag" "private_subnet_karpenter" {
   value       = local.cluster_name
 }
 
+resource "aws_ec2_tag" "cluster_sg_karpenter" {
+  resource_id = module.eks_cilium.cluster_security_group_id
+  key         = "karpenter.sh/discovery"
+  value       = local.cluster_name
+}
+
 module "eks_cilium" {
   source = "../../modules/eks-cilium-eni"
 

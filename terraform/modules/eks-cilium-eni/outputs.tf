@@ -22,10 +22,10 @@ output "cluster_certificate_authority_data" {
   value       = module.eks.cluster_certificate_authority_data
 }
 
-output "ebs_csi_pod_identity_role_arn" {
-  description = "ARN of IAM role for EBS CSI driver (Pod Identity)"
-  value       = module.ebs_csi_pod_identity.iam_role_arn
-}
+# output "ebs_csi_pod_identity_role_arn" {
+#   description = "ARN of IAM role for EBS CSI driver (Pod Identity)"
+#   value       = module.ebs_csi_pod_identity.iam_role_arn
+# }
 
 output "oidc_provider_arn" {
   description = "ARN of the OIDC provider for IRSA"
@@ -37,7 +37,7 @@ output "cluster_oidc_issuer_url" {
   value       = module.eks.cluster_oidc_issuer_url
 }
 
-output "node_iam_role_name" {
-  description = "IAM role name for system nodes (attach additional policies here)"
-  value       = aws_iam_role.system_node.name
+output "cluster_security_group_id" {
+  description = "ID of the EKS cluster security group (for Karpenter discovery tag)"
+  value       = module.eks.cluster_security_group_id
 }

@@ -9,12 +9,12 @@ resource "kubectl_manifest" "karpenter_node_class" {
     metadata:
       name: default
     spec:
-      amiFamily: Bottlerocket
+      amiFamily: AL2023
 
       role: ${module.karpenter.node_iam_role_name}
 
       amiSelectorTerms:
-        - alias: bottlerocket@latest
+        - alias: al2023@latest
 
       subnetSelectorTerms:
         - tags:
@@ -69,11 +69,11 @@ resource "kubectl_manifest" "karpenter_node_pool" {
 
             - key: karpenter.k8s.aws/instance-family
               operator: In
-              values: ["m6g", "c6g", "m7g", "c7g", "t4g"]
+              values: ["m6g", "c6g", "m7g", "c7g"]
 
             - key: karpenter.k8s.aws/instance-size
               operator: In
-              values: ["small", "medium", "large", "xlarge"]
+              values: ["large", "xlarge"]
 
       limits:
         cpu: "100"

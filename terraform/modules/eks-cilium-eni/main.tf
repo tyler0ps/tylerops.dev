@@ -33,9 +33,68 @@ module "eks" {
     }
   }
 
-  # Addons are installed separately in addons.tf AFTER Cilium is ready.
-  # Installing them here causes deadlock: EKS waits for addon pods to be
-  # ACTIVE, but pods can't schedule until Cilium removes the node taint.
+  node_security_group_tags = {
+    "karpenter.sh/discovery" = var.cluster_name
+  }
+
+  node_security_group_additional_rules = {
+    ingress_nlb_envoy = {
+      description = "Allow NLB health checks and traffic to Envoy Gateway"
+      protocol    = "tcp"
+      from_port   = 10080
+      to_port     = 10080
+      type        = "ingress"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  eks_managed_node_groups = {
+    karpenter = {
+      instance_types = ["m6g.medium", "m7g.medium"]
+      ami_type       = "BOTTLEROCKET_ARM_64"
+      capacity_type  = "SPOT"
+
+      min_size     = 1
+      max_size     = 3
+      desired_size = 1
+
+      labels = {
+        role                      = "karpenter-controller"
+        "karpenter.sh/controller" = "true"
+      }
+
+      taints = {
+        CriticalAddonsOnly = {
+          key    = "CriticalAddonsOnly"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
+
+      tags = {
+        "karpenter.sh/discovery" = var.cluster_name
+      }
+    }
+  }
+
+  # ============================================================
+  # CLUSTER ADD-ONS
+  # ============================================================
+  addons = {
+    coredns = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    kube-proxy = {}
+    vpc-cni = {
+      before_compute = true
+    }
+
+    # aws-ebs-csi-driver = {
+    #   addon_version        = "v1.55.0-eksbuild.1"
+    #   configuration_values = jsonencode({ controller = { replicaCount = 1 } })
+    # }
+  }
 
   tags = var.tags
 }

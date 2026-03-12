@@ -13,17 +13,50 @@ module "karpenter" {
 
   enable_spot_termination = true
 
+  namespace = var.karpenter_namespace
+
   # Used to attach additional IAM policies to the Karpenter node IAM role
-  # node_iam_role_additional_policies = {
-  #   AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  # }
+  node_iam_role_additional_policies = {
+    AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  }
 
   tags = var.tags
 
   depends_on = [
     module.eks,
-    helm_release.cilium,
   ]
+}
+
+# Cilium ENI mode requires EC2 API access from every node,
+# including Karpenter-launched nodes (same as system_node role in node-group.tf).
+resource "aws_iam_role_policy" "cilium_eni_karpenter_node" {
+  name = "CiliumENIPermissions"
+  role = module.karpenter.node_iam_role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeVpcs",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceTypes",
+        "ec2:CreateNetworkInterface",
+        "ec2:AttachNetworkInterface",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DetachNetworkInterface",
+        "ec2:ModifyNetworkInterfaceAttribute",
+        "ec2:AssignPrivateIpAddresses",
+        "ec2:UnassignPrivateIpAddresses",
+        "ec2:CreateTags",
+        "ec2:DescribeTags",
+      ]
+      Resource = "*"
+    }]
+  })
 }
 
 # ============================================================
@@ -40,7 +73,9 @@ resource "helm_release" "karpenter" {
 
   values = [
     <<-EOT
-    replicaCount: 1
+    nodeSelector:
+      karpenter.sh/controller: 'true'
+    replicas: 1
 
     settings:
       clusterName: ${module.eks.cluster_name}
