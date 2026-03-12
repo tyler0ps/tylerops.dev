@@ -1,0 +1,21 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: main-nlb
+  namespace: envoy-gateway-system
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "eks-cilium-envoy-69c77625691606d9.elb.ap-southeast-1.amazonaws.com"
+spec:
+  gatewayClassName: envoy
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: main-nlb
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
