@@ -8,10 +8,10 @@ output "authentik_url" {
   value       = "https://${var.domain_name}"
 }
 
-output "ami_id" {
-  description = "Amazon Linux 2023 ARM64 AMI ID used by Launch Template"
-  value       = data.aws_ami.al2023_arm64.id
-}
+# output "ami_id" {
+#   description = "Amazon Linux 2023 ARM64 AMI ID used by Launch Template"
+#   value       = data.aws_ami.al2023_arm64.id
+# }
 
 output "ebs_volume_id" {
   description = "EBS data volume ID (persistent, prevent_destroy=true)"

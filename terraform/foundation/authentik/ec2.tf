@@ -93,7 +93,7 @@ resource "aws_launch_template" "authentik" {
   block_device_mappings {
     device_name = "/dev/xvda"
     ebs {
-      volume_size           = 15
+      volume_size           = 8
       volume_type           = "gp3"
       encrypted             = true
       delete_on_termination = true
@@ -177,11 +177,11 @@ resource "aws_autoscaling_schedule" "authentik_scale_down" {
 }
 
 # Scale up at 06:00 Vietnam (23:00 UTC)
-resource "aws_autoscaling_schedule" "authentik_scale_up" {
-  scheduled_action_name  = "authentik-scale-up"
-  autoscaling_group_name = aws_autoscaling_group.authentik.name
-  recurrence             = "0 23 * * *" # 06:00 Asia/Ho_Chi_Minh (UTC+7)
-  desired_capacity       = 1
-  min_size               = 0
-  max_size               = 1
-}
+# resource "aws_autoscaling_schedule" "authentik_scale_up" {
+#   scheduled_action_name  = "authentik-scale-up"
+#   autoscaling_group_name = aws_autoscaling_group.authentik.name
+#   recurrence             = "0 23 * * *" # 06:00 Asia/Ho_Chi_Minh (UTC+7)
+#   desired_capacity       = 1
+#   min_size               = 0
+#   max_size               = 1
+# }
