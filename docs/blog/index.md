@@ -9,6 +9,13 @@ Welcome to my blog where I share insights about DevOps, cloud infrastructure, Ku
 
 ## Recent Posts
 
+### [Container Networking Under the Hood - Part 1: Network Namespaces](/blog/posts/eks-karpenter-setup)
+*Mar 27, 2026*
+
+Demystifying container isolation by diving deep into Linux Network Namespaces.
+
+---
+
 ### [Static Website Hosting on AWS: Serverless, Fast, and Cheap](/blog/posts/static-website-hosting)
 *February 27, 2026*
 
