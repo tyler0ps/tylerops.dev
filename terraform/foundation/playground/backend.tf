@@ -1,0 +1,9 @@
+terraform {
+  backend "s3" {
+    bucket       = "generic-gha-terraform-state"
+    key          = "foundation/playground/terraform.tfstate"
+    region       = "ap-southeast-1"
+    encrypt      = true
+    use_lockfile = true
+  }
+}
