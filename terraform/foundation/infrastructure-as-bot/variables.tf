@@ -26,3 +26,7 @@ variable "atlantis_asg_name" {
 variable "plane_asg_name" {
   default = "plane-asg"
 }
+
+variable "playground_asg_name" {
+  default = "playground-asg"
+}

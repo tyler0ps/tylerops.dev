@@ -12,6 +12,7 @@ NAT_ASG = os.environ["NAT_ASG_NAME"]
 CADDY_ASG = os.environ["CADDY_ASG_NAME"]
 ATLANTIS_ASG = os.environ["ATLANTIS_ASG_NAME"]
 PLANE_ASG = os.environ["PLANE_ASG_NAME"]
+PLAYGROUND_ASG = os.environ["PLAYGROUND_ASG_NAME"]
 ALLOWED_CHAT_ID = os.environ["ALLOWED_CHAT_ID"]
 
 _ssm = boto3.client("ssm")
@@ -37,6 +38,11 @@ HELP_TEXT = """🏗 Infrastructure Manager
   /caddy_up      — start Caddy
   /caddy_down    — stop Caddy
   /caddy_refresh — replace Caddy instance
+
+✈️ Playground (Ubuntu server for testing)
+  /playground_up      — start playground
+  /playground_down    — stop playground
+  /playground_refresh — replace playground instance
 
 🤖 Atlantis (CI/CD)
   /atlantis_up      — start Atlantis
@@ -85,6 +91,11 @@ HELP_KEYBOARD = {
             {"text": "✈️ 🔄", "callback_data": "plane_refresh"},
         ],
         [
+            {"text": "Playground ⬆️", "callback_data": "playground_up"},
+            {"text": "Playground ⬇️", "callback_data": "playground_down"},
+            {"text": "Playground 🔄", "callback_data": "playground_refresh"},
+        ],
+        [
             {"text": "🟢 All ON", "callback_data": "all_up"},
             {"text": "🔴 All OFF", "callback_data": "all_down"},
         ],
@@ -92,13 +103,14 @@ HELP_KEYBOARD = {
     ]
 }
 
-_ASG_ORDER = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG]
+_ASG_ORDER = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG, PLAYGROUND_ASG]
 _ASG_SHORT = {
     AUTHENTIK_ASG: "🔐 Authentik",
     NAT_ASG: "🌐 NAT",
     CADDY_ASG: "🔀 Caddy",
     ATLANTIS_ASG: "🤖 Atlantis",
     PLANE_ASG: "✈️ Plane",
+    PLAYGROUND_ASG: "Playground",
 }
 _ASG_CMD = {
     AUTHENTIK_ASG: "authentik",
@@ -106,6 +118,7 @@ _ASG_CMD = {
     CADDY_ASG: "caddy",
     ATLANTIS_ASG: "atlantis",
     PLANE_ASG: "plane",
+    PLAYGROUND_ASG: "playground",
 }
 
 
@@ -169,7 +182,7 @@ def _format_uptime(launch_time: datetime) -> str:
 
 def get_status() -> tuple[str, dict]:
     resp = _asg.describe_auto_scaling_groups(
-        AutoScalingGroupNames=[AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG]
+        AutoScalingGroupNames=[AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG, PLAYGROUND_ASG]
     )
     labels = {
         AUTHENTIK_ASG: "🔐 Authentik (auth.tylerops.dev)",
@@ -177,6 +190,7 @@ def get_status() -> tuple[str, dict]:
         CADDY_ASG: "🔀 Caddy (reverse proxy)",
         ATLANTIS_ASG: "🤖 Atlantis (CI/CD)",
         PLANE_ASG: "✈️ Plane (capitalplace.tylerops.dev)",
+        PLAYGROUND_ASG: "🧪 Playground (testing server)",
     }
 
     all_instance_ids = [
@@ -323,6 +337,19 @@ def process_command(chat_id: str, cmd: str) -> None:
     elif cmd == "plane_refresh":
         refresh(PLANE_ASG)
         send_message(chat_id, "✈️ Plane: replacing instance...\nReady in ~2-3 min", _up_keyboard("plane", "Plane"))
+    
+    # --- Playground ---
+    elif cmd == "playground_up":
+        changed = scale(PLAYGROUND_ASG, 1)
+        msg = "Playground: starting...\nReady in ~1 min" if changed else "Playground: already running"
+        send_message(chat_id, msg, _up_keyboard("playground", "Playground"))
+    elif cmd == "playground_down":
+        changed = scale(PLAYGROUND_ASG, 0)
+        msg = "Playground: stopping..." if changed else "Playground: already stopped"
+        send_message(chat_id, msg, _down_keyboard("playground", "Playground"))
+    elif cmd == "playground_refresh":
+        refresh(PLAYGROUND_ASG)
+        send_message(chat_id, "Playground: replacing instance...\nReady in ~2-3 min", _up_keyboard("playground", "Playground"))
 
     # --- All ON / All OFF ---
     elif cmd == "all_up":
