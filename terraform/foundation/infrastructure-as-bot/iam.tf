@@ -33,6 +33,7 @@ data "aws_iam_policy_document" "lambda_policy" {
       "arn:aws:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.caddy_asg_name}",
       "arn:aws:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.atlantis_asg_name}",
       "arn:aws:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.plane_asg_name}",
+      "arn:aws:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.playground_asg_name}",
     ]
   }
 

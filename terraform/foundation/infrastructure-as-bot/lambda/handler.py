@@ -353,14 +353,14 @@ def process_command(chat_id: str, cmd: str) -> None:
 
     # --- All ON / All OFF ---
     elif cmd == "all_up":
-        asgs = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG]
+        asgs = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG, PLAYGROUND_ASG]
         started = [_ASG_SHORT[a] for a in asgs if scale(a, 1)]
         if started:
             send_message(chat_id, "🟢 Starting all services:\n" + "\n".join(f"  {s}" for s in started))
         else:
             send_message(chat_id, "🟢 All services already running")
     elif cmd == "all_down":
-        asgs = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG]
+        asgs = [AUTHENTIK_ASG, NAT_ASG, CADDY_ASG, ATLANTIS_ASG, PLANE_ASG, PLAYGROUND_ASG]
         stopped = [_ASG_SHORT[a] for a in asgs if scale(a, 0)]
         if stopped:
             send_message(chat_id, "🔴 Stopping all services:\n" + "\n".join(f"  {s}" for s in stopped))
