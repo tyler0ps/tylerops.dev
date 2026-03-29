@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'DevOps Accelerator',
-  description: 'Working DevOps setups and reference implementations.',
+  title: 'TylerOps',
+  description: 'Tyler\'s personal blog about DevOps, low-level Linux systems, and cloud platforms.',
 
   // Clean URLs without .html extension
   cleanUrls: true,
@@ -12,24 +12,26 @@ export default defineConfig({
 
   // Head metadata
   head: [
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     ['meta', { name: 'theme-color', content: '#3eaf7c' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:site_name', content: 'DevOps Accelerator' }],
-    ['meta', { property: 'og:title', content: 'DevOps Accelerator - Working DevOps setups' }],
-    ['meta', { property: 'og:description', content: 'Working DevOps setups and reference implementations.' }],
+    ['meta', { property: 'og:site_name', content: 'TylerOps' }],
+    ['meta', { property: 'og:title', content: 'TylerOps - DevOps & Cloud Platform Engineering' }],
+    ['meta', { property: 'og:description', content: 'Tyler\'s personal blog about DevOps, low-level Linux systems, and cloud platforms.' }],
     ['meta', { property: 'og:url', content: 'https://tylerops.dev' }],
   ],
 
   // Theme configuration
   themeConfig: {
-    siteTitle: 'DevOps Accelerator',
+    logo: '/logo.svg',
+    siteTitle: 'TylerOps',
 
     // Navigation bar
     nav: [
       { text: 'Home', link: '/' },
       { text: 'About', link: '/about' },
       { text: 'Blog', link: '/blog/' },
+      { text: 'Series', link: '/series/container-networking/' },
       { text: 'Projects', link: '/projects/' },
     ],
 
@@ -40,9 +42,15 @@ export default defineConfig({
           text: 'Blog Posts',
           items: [
             { text: 'All Posts', link: '/blog/' },
-            { text: 'Container Networking - Part 1', link: '/blog/posts/container-networking-1' },
-            { text: 'Static Website Hosting', link: '/blog/posts/static-website-hosting' },
-            { text: 'EKS + Karpenter', link: '/blog/posts/eks-karpenter-setup' },
+          ]
+        }
+      ],
+      '/series/': [
+        {
+          text: 'Container Networking',
+          items: [
+            { text: 'Overview', link: '/series/container-networking/' },
+            { text: 'Part 1: Network Namespaces', link: '/series/container-networking/container-networking-1' },
           ]
         }
       ],
@@ -51,7 +59,15 @@ export default defineConfig({
           text: 'Projects',
           items: [
             { text: 'Overview', link: '/projects/' },
-            { text: 'AWS Baseline', link: '/projects/aws-baseline' },
+            { 
+              text: 'AWS Baseline', 
+              collapsed: false,
+              items: [
+                { text: 'Overview', link: '/projects/aws-baseline/' },
+                { text: 'Static Website Hosting', link: '/projects/aws-baseline/static-website-hosting' },
+                { text: 'EKS + Karpenter', link: '/projects/aws-baseline/eks-karpenter-setup' }
+              ]
+            },
             { text: 'Challenges', link: '/projects/challenges' },
           ]
         }

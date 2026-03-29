@@ -9,9 +9,9 @@ description: Senior DevOps Engineer with 8+ years of experience in cloud infrast
 
 ## Hey there!
 
-I'm a DevOps Engineer with 8+ years in software development, spending the last 5+ years deep in cloud infrastructure, platform engineering, and CI/CD automation. AWS Certified Solutions Architect – Professional.
+Hi, I'm Tyler, a Senior DevOps Engineer bridging the gap between Dev and Ops. With almost 10 years in software engineering and 5+ years deep in cloud infrastructure, I'm passionate about building reliable platforms and unraveling low-level systems.
 
-My background in backend systems and mobile development gives me a unique perspective on bridging the gap between Dev and Ops. I'm passionate about building reliable infrastructure, exploring emerging technologies, and continuously pushing my limits.
+I am an **AWS Certified Solutions Architect – Professional** and a **Certified Kubernetes Administrator (CKA)**. I created this space to document my technical journey, share deep dives into infrastructure, and connect with fellow engineers.
 
 ## Beyond Work
 

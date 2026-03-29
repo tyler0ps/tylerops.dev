@@ -24,7 +24,7 @@ A production-grade personal cloud infrastructure built on AWS best practices. Co
 
 S3 + CloudFront + Route53 with GitHub Actions CI/CD. No servers, sub-50ms latency from edge, costs cents per month. OIDC-based auth for zero long-lived AWS credentials in CI.
 
-[Read the blog post →](/blog/posts/static-website-hosting)
+[Read the blog post →](/projects/aws-baseline/static-website-hosting)
 
 ---
 
@@ -48,7 +48,7 @@ Centralized identity with AWS IAM Identity Center. Single sign-on across AWS acc
 
 EKS cluster with Karpenter for node autoscaling. Cost-optimized with Spot instances, right-sized automatically. Full Terraform setup with sensible defaults.
 
-[Read the blog post →](/blog/posts/eks-karpenter-setup) | [Source code](https://github.com/tyler0ps/tylerops.dev/tree/main/source/eks-karpenter)
+[Read the blog post →](/projects/aws-baseline/eks-karpenter-setup) | [Source code](https://github.com/tyler0ps/tylerops.dev/tree/main/source/eks-karpenter)
 
 ---
 

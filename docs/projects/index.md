@@ -1,11 +1,11 @@
 ---
 title: Projects
-description: DevOps projects and learning resources
+description: DevOps projects and reference implementations
 ---
 
 # Projects
 
-## [AWS Baseline](/projects/aws-baseline)
+## [AWS Baseline](/projects/aws-baseline/)
 
 A production-grade cloud infrastructure built on AWS best practices — multi-account structure, centralized SSO, Kubernetes, Observability, and self-hosted tooling. Plus additional reference implementations for EKS + ArgoCD, VPN, and CI/CD pipelines.
 
