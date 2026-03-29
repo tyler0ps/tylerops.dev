@@ -198,3 +198,11 @@ In the physical networking world, when we have dozens of computers in a room tha
 In the Linux networking world, the virtual equivalent for this exact problem is the Linux Bridge. Instead of direct container-to-container connections, we simply plug each namespace into a single, central bridge device. 
 
 **In Part 2**, we will tear down our direct connections, set up a Linux Bridge (`br0`), and see how it elegantly solves container communication-giving us the foundation for the famous `docker0` bridge!
+
+## References
+
+* [Tracing the path of network traffic in Kubernetes (LearnKube)](https://learnkube.com/kubernetes-network-packets)
+* [Create Your Own Network Namespace (ITNEXT)](https://itnext.io/create-your-own-network-namespace-90aaebc745d)
+* [How Container Networking Works: Building a Bridge Network From Scratch (iximiuz Labs)](https://labs.iximiuz.com/tutorials/container-networking-from-scratch)
+* [YouTube Video Reference](https://www.youtube.com/watch?v=6v_BDHIgOY8)
+* [Building containers by hand using namespaces: The net namespace (Red Hat)](https://www.redhat.com/en/blog/net-namespaces)
