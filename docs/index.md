@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "Hi, I'm Tyler"
   text: "Welcome to my tech space"
-  tagline: "Where you may find technical writings on Linux, Containers, AWS, and everything under the hood"
+  tagline: "Where you may find helpful technical writings on Linux, Containers, AWS, and everything under the hood."
   actions:
     - theme: brand
       text: View Projects
