@@ -55,7 +55,7 @@ When you log into a server and run the commands we just discussed, you are viewi
 Our goal now is to step outside this default environment and create a *new*, completely isolated network namespace from scratch.
 
 
-## In Action: Building a Container Network from Scratch
+## Building a Container Network from Scratch
 
 Let's get our hands dirty and build what Docker or Kubernetes does under the hood.
 ![Linux Netowrk Namespace - ns0](/images/container-networking/ns0.png)
@@ -159,7 +159,7 @@ sudo ip netns exec ns0 ping 8.8.8.8
 It fails because `ns0` has its own isolated routing table with no default gateway or NAT rules configured to route traffic out to the physical internet. True isolation!
 
 ### 7. Scale it up: Create ns1
-To demonstrate the next problem, let's quickly create a second namespace, `ns1`.
+In reality, we will have more than one container, so let's create a second namespace, `ns1`.
 
 ```bash
 # Create ns1 and its veth pair
@@ -177,27 +177,174 @@ sudo ip netns exec ns1 ip link set ceth1 up
 sudo ip netns exec ns1 ip link set lo up
 ```
 
-Right now, `ns0` can talk to the Host, and `ns1` can talk to the Host. But can they talk to each other? Let's test it:
+So now, we have two isolated network namespaces, `ns0` and `ns1`, and both are independently connected to the host via their own veth pairs. 
+![Linux Netowrk Namespace - ns0 ns1](/images/container-networking/ns0-ns1.png)
 
+We logically expect that `ns0` and `ns1` can both ping the host. Let's verify this assumption.
+
+First, let's ping from `ns0`:
 ```bash
-# Try to ping ns1 (10.0.0.4) from ns0
-sudo ip netns exec ns0 ping -c 1 10.0.0.4
-
-# Result
-# ping: connect: Network is unreachable
+# Ping from ns0 to Host (10.0.0.1)
+sudo ip netns exec ns0 ping -c 1 10.0.0.1
+# Result: SUCCESS
 ```
 
-### 8. The Scaling Problem: Managing Veth Pairs
-So far, we have successfully created isolated network namespaces (`ns0, ns1`) and connected them to the host using individual `veth` pairs.
+Now, let's try pinging from `ns1` to the Host (`10.0.0.3`):
+```bash
+ip netns exec ns1 ping 10.0.0.3 -c 2
+# PING 10.0.0.3 (10.0.0.3) 56(84) bytes of data.
+# 
+# --- 10.0.0.3 ping statistics ---
+# 2 packets transmitted, 0 received, 100% packet loss, time 1061ms
+```
 
-To fix the unreachability issue above, we could create a new, dedicated `veth` pair directly connecting `ns0` to `ns1`. However, imagine scaling this up to just 10 microservices. If every container needs a direct virtual cable to every other container, we would need to manage **45 separate veth pairs** *(using the N(N-1)/2 formula)*. If you run 100 containers, that jumps to **4,950 pairs**! This approach quickly becomes a tangled, unmanageable mess of virtual cables and complex routing rules.
+Wait, why did the ping from `ns1` to the host fail with 100% packet loss? Let's run a continuous ping from `ns1` and debug the incoming traffic on the host's `veth1` interface using `tcpdump`:
 
-## The Solution: The Linux Bridge
-In the physical networking world, when we have dozens of computers in a room that need to communicate, we don't connect them all directly to each other with crossover cables. We plug them all into a central Network Switch.
+```bash
+root@ty-labs:~# tcpdump -i veth1
 
-In the Linux networking world, the virtual equivalent for this exact problem is the Linux Bridge. Instead of direct container-to-container connections, we simply plug each namespace into a single, central bridge device. 
+# 04:30:14.830971 IP 10.0.0.4 > ty-labs: ICMP echo request, id 5484, seq 1, length 64
+# 04:30:15.892046 IP 10.0.0.4 > ty-labs: ICMP echo request, id 5484, seq 2, length 64
+```
 
-**In Part 2**, we will tear down our direct connections, set up a Linux Bridge (`br0`), and see how it elegantly solves container communication-giving us the foundation for the famous `docker0` bridge!
+The ICMP echo requests from `ns1` (`10.0.0.4`) are successfully reaching the host on `veth1`! The problem isn't the incoming traffic; the host simply doesn't know how to send the reply back correctly. Let's look at how the host routes packets destined for `10.0.0.4`:
+
+```bash
+ip route get 10.0.0.4 
+# 10.0.0.4 dev veth0 src 10.0.0.1 uid 0
+```
+
+Notice the problem? The host is trying to send the reply out through **`veth0`** instead of **`veth1`**! 
+
+Let's view the host's full routing table to understand why this happens:
+
+```bash
+root@ty-labs:~# ip route
+
+# 10.0.0.0/24 dev veth0 proto kernel scope link src 10.0.0.1
+# 10.0.0.0/24 dev veth1 proto kernel scope link src 10.0.0.3
+```
+
+Here lies our routing conflict. Because both `veth0` and `veth1` were assigned IP addresses in the exact same `10.0.0.0/24` subnet, the Linux kernel created two overlapping routing rules. When trying to route traffic to `10.0.0.4`, the host matches the first rule it sees (`10.0.0.0/24 dev veth0`) and sends the packet down the wrong virtual cable!
+
+### The Scaling Problem
+
+To fix the unreachability issue, we *could* create more direct veth pairs and manually manage complex IP subnets. But imagine scaling this to 100 containers, we would need thousands of virtual cables. It becomes a completely unmanageable mess.
+
+So, is there another way to handle this?
+
+**Yes, the Linux Bridge.**
+
+Instead of tangled direct connections, we simply plug every namespace into a central virtual switch. We will tear down these direct connections and bring the Linux Bridge into the picture to solve this once and for all!
+
+## Setting Up the Linux Bridge
+
+![Linux Network Namespace - Bridge](/images/container-networking/linux-bridge.png)
+
+Let's tear down our old direct connections and build a proper, scalable bridged network.
+
+### 1. Create the Virtual Bridge (`br0`)
+First, we create our virtual switch. Instead of assigning IP addresses directly to individual `veth` cables on the host, we assign a single IP address directly to the bridge. This IP will act as the default gateway for all our containers.
+
+```bash
+# Create a new bridge device named br0
+ip link add br0 type bridge
+
+# Assign an IP address to the bridge and bring it UP
+ip addr add dev br0 10.0.0.1/24
+ip link set br0 up
+```
+
+### 2. Create Namespaces and Veth Pairs
+Next, we recreate our namespaces (`ns0` and `ns1`) and their virtual cables. Notice one critical difference from our previous setup: **we no longer assign IP addresses to the host ends (`veth0` and `veth1`)**. We just bring them UP, ready to be plugged in.
+
+```bash
+# Create ns0 and its veth pair
+ip netns add ns0
+ip link add veth0 type veth peer name ceth0
+ip link set ceth0 netns ns0
+ip link set veth0 up
+
+# Configure the namespace side (ns0)
+ip netns exec ns0 ip addr add 10.0.0.2/24 dev ceth0
+ip netns exec ns0 ip link set ceth0 up
+ip netns exec ns0 ip link set lo up
+
+# Create ns1 and its veth pair
+ip netns add ns1
+ip link add veth1 type veth peer name ceth1
+ip link set ceth1 netns ns1
+ip link set veth1 up
+
+# Configure the namespace side (ns1)
+ip netns exec ns1 ip addr add 10.0.0.4/24 dev ceth1
+ip netns exec ns1 ip link set ceth1 up
+ip netns exec ns1 ip link set lo up
+```
+
+### 3. Attach Veth Pairs to the Bridge
+Right now, our virtual cables are dangling on the host side. We need to plug them into our newly created switch (`br0`). We do this by setting the bridge as the "master" of our host-side interfaces.
+
+```bash
+# "Plug" veth0 and veth1 into the br0 switch
+ip link set veth0 master br0
+ip link set veth1 master br0
+```
+
+### 4. Verify Connectivity
+With both containers plugged into the same central switch, they should now be able to communicate perfectly on the same subnet without any routing conflicts. Let's test it:
+
+**Ping `ns1` from `ns0`:**
+```bash
+ip netns exec ns0 ping 10.0.0.4 -c 1
+
+# PING 10.0.0.4 (10.0.0.4) 56(84) bytes of data.
+# 64 bytes from 10.0.0.4: icmp_seq=1 ttl=64 time=0.337 ms
+# 
+# --- 10.0.0.4 ping statistics ---
+# 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+# rtt min/avg/max/mdev = 0.337/0.337/0.337/0.000 ms
+```
+
+**Ping `ns0` from `ns1`:**
+```bash
+ip netns exec ns1 ping 10.0.0.2 -c 1
+
+# PING 10.0.0.2 (10.0.0.2) 56(84) bytes of data.
+# 64 bytes from 10.0.0.2: icmp_seq=1 ttl=64 time=0.156 ms
+# 
+# --- 10.0.0.2 ping statistics ---
+# 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+# rtt min/avg/max/mdev = 0.156/0.156/0.156/0.000 ms
+```
+
+### 5. Inspecting the Layer 2 Traffic
+Because `ns0` and `ns1` are connected to the same Layer 2 bridge, they can reach each other directly using ARP (Address Resolution Protocol) without routing through the host's IP stack. We can verify this by checking their neighbor tables:
+
+```bash
+ip netns exec ns0 ip neigh
+# 10.0.0.4 dev ceth0 lladdr 62:f9:58:b8:84:ca REACHABLE
+
+ip netns exec ns1 ip neigh
+# 10.0.0.2 dev ceth1 lladdr c6:78:fd:d5:9b:cd REACHABLE
+```
+
+To see this connection in action, we can monitor the traffic passing across the `br0` device itself:
+
+```bash
+tcpdump -i br0
+
+# 06:27:36.845487 ARP, Request who-has 10.0.0.4 tell 10.0.0.2, length 28
+# 06:27:36.845440 ARP, Request who-has 10.0.0.2 tell 10.0.0.4, length 28
+# 06:27:36.845541 ARP, Reply 10.0.0.4 is-at 62:f9:58:b8:84:ca (oui Unknown), length 28
+# 06:27:36.845558 ARP, Reply 10.0.0.2 is-at c6:78:fd:d5:9b:cd (oui Unknown), length 28
+```
+
+The bridge successfully acts as a central hub, forwarding ARP requests and ICMP traffic directly between our isolated environments-precisely how Docker allows containers to communicate on the default `docker0` bridge!
+
+---
+
+## To be continue
 
 ## References
 
