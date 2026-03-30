@@ -344,7 +344,22 @@ The bridge successfully acts as a central hub, forwarding ARP requests and ICMP 
 
 ---
 
-## To be continue
+# To be continued
+
+## Outbound Connectivity: Enabling Internet Access via IP Masquerading
+Explain the need for Source NAT (IP Masquerading) and provide the `iptables` rule to give the container internet access.
+
+## Ingress Traffic: Port Forwarding from Host to Container
+Demonstrate using Destination NAT (DNAT) in `iptables` to expose a container's port, demystifying how `docker run -p` works under the hood.
+
+## Connecting the Dots: The 3 Built-in Docker Networks
+Briefly map the manual concepts just built to Docker's three default networking modes: `none`, `host`, and `bridge`.
+
+## From Docker to Kubernetes: Pod Networking Basics
+Briefly connect the dots by explaining that a Kubernetes Pod is simply a group of containers sharing a single network namespace and utilizing similar bridge mechanisms.
+
+## Up Next in Part 2: Automating with Kubernetes CNI
+Tease the next article by stating that Container Network Interface (CNI) plugins exist purely to automate all these manual namespace, bridge, and routing configurations across a large-scale, multi-node cluster.
 
 ## References
 
