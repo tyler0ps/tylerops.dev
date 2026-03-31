@@ -572,14 +572,40 @@ If you've made it this far - congratulations, you already understand how Docker 
 
 ### `none` - Total Isolation
 ```bash
-docker run --network none alpine
+docker run --network none alpine ip link
 ```
+
+```
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+```
+
+Only `lo` - no `eth0`, no routes, nothing. Exactly like a fresh namespace before any configuration.
+
 Remember the very first step when we created `ns0`? A brand-new namespace with no interfaces, no routes, nothing - completely cut off from the world. That's Docker's `none` network. The container gets its own network namespace, but Docker doesn't configure any networking for it. Useful when you want a container with absolutely no network access.
 
 ### `host` - No Isolation
 ```bash
-docker run --network host nginx
+docker run --network host alpine ip link
 ```
+
+```
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enp0s1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP qlen 1000
+    link/ether f2:7b:12:d6:98:89 brd ff:ff:ff:ff:ff:ff
+3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN
+    link/ether 62:b1:68:92:fe:3a brd ff:ff:ff:ff:ff:ff
+17: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    link/ether 6a:2d:29:7d:07:a7 brd ff:ff:ff:ff:ff:ff
+19: veth0@if18: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue master br0 state UP qlen 1000
+    link/ether 4e:37:8c:54:cb:fc brd ff:ff:ff:ff:ff:ff
+21: veth1@if20: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue master br0 state UP qlen 1000
+    link/ether be:f7:d4:7d:90:ca brd ff:ff:ff:ff:ff:ff
+```
+
+The container sees **everything** - `enp0s1`, `docker0`, `br0`, even our manually created `veth` pairs. It's sharing the host's entire network stack.
+
 This is the opposite extreme. The container **skips creating a network namespace entirely** and shares the host's root network namespace directly. No bridge, no veth pairs, no NAT - the container's processes bind directly to the host's network interfaces. It's fast (zero network overhead), but there's no isolation: port conflicts between containers become your problem.
 
 ### `bridge` - The Default (What We Built!)
