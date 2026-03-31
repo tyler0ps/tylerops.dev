@@ -50,7 +50,7 @@ export default defineConfig({
           text: 'Container Networking',
           items: [
             { text: 'Overview', link: '/series/container-networking/' },
-            { text: 'Part 1: Network Namespaces', link: '/series/container-networking/container-networking-1' },
+            { text: 'Part 1: Building Container Networks from Scratch', link: '/series/container-networking/container-networking-1' },
           ]
         }
       ],
@@ -59,8 +59,8 @@ export default defineConfig({
           text: 'Projects',
           items: [
             { text: 'Overview', link: '/projects/' },
-            { 
-              text: 'AWS Baseline', 
+            {
+              text: 'AWS Baseline',
               collapsed: false,
               items: [
                 { text: 'Overview', link: '/projects/aws-baseline/' },

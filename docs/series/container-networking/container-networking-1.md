@@ -1,12 +1,14 @@
 ---
-title: "Container Networking Under the Hood - Part 1: Network Namespaces"
+title: "Container Networking Under the Hood - Part 1: Building Container Networks from Scratch"
 description: "Demystifying container isolation by diving deep into Linux Network Namespaces."
 date: 2026-03-27
 tags: [linux, networking, devops, containers]
 ---
 
-# Container Networking Under the Hood - Part 1: Network Namespaces
-Container platforms aren't magic, myths, or rocket science. They are engineered by people and built entirely on top of existing Linux kernel features. The kernel provides the raw capabilities; engineers simply grouped these features together to solve fundamental DevOps challenges. By effectively isolating system resources and packaging applications into a standardized unit, they created a better way to run and scale software-giving birth to what we now call a "container."
+# Container Networking Under the Hood - Part 1: Building Container Networks from Scratch
+<span style="color: var(--vp-c-text-2); font-size: 0.9em;">March 27, 2026</span>
+
+Containers aren't magic, they're just Linux kernel features stitched together. In this article, we'll build a complete container network **from scratch** using nothing but raw Linux primitives: namespaces, veth pairs, bridges, and iptables. By the end, you'll deeply understand all 3 Docker network modes, because you'll have created them yourself.
 
 ## Introduction: What are Linux Namespaces?
 ![Docker and Linux Namespaces](/images/container-networking/linux-namespace-intro.png)
@@ -25,7 +27,7 @@ There are 7 primary types of namespaces in Linux:
 In this series, we will focus exclusively on the **Network Namespace**.
 ## The Network Namespace (`netns`)
 
-A Network Namespace provides a brand new, completely isolated network stack for a process. We hear this definition a lot, but wait—what exactly *is* a "network stack"? 
+A Network Namespace provides a brand new, completely isolated network stack for a process. We hear this definition a lot, but wait-what exactly *is* a "network stack"? 
 
 Simply put, it is the collection of network devices (interfaces), their assigned IP addresses, routing tables, and firewall rules (iptables) that dictate how traffic flows in and out of a system. 
 
@@ -55,7 +57,7 @@ When you log into a server and run the commands we just discussed, you are viewi
 Our goal now is to step outside this default environment and create a *new*, completely isolated network namespace from scratch.
 
 
-## Building a Container Network from Scratch
+## Building a Network Namespace
 
 Let's get our hands dirty and build what Docker or Kubernetes does under the hood.
 ![Linux Netowrk Namespace - ns0](/images/container-networking/ns0.png)
@@ -237,11 +239,17 @@ So, is there another way to handle this?
 
 Instead of tangled direct connections, we simply plug every namespace into a central virtual switch. We will tear down these direct connections and bring the Linux Bridge into the picture to solve this once and for all!
 
-## Setting Up the Linux Bridge
+## Setting Up the Linux Bridge, Container to container networking
 
 ![Linux Network Namespace - Bridge](/images/container-networking/linux-bridge.png)
 
 Let's tear down our old direct connections and build a proper, scalable bridged network.
+
+```bash
+# let clean up the old interfaces
+ip netns delete ns0
+ip netns delete ns1
+```
 
 ### 1. Create the Virtual Bridge (`br0`)
 First, we create our virtual switch. Instead of assigning IP addresses directly to individual `veth` cables on the host, we assign a single IP address directly to the bridge. This IP will act as the default gateway for all our containers.
@@ -342,10 +350,6 @@ tcpdump -i br0
 
 The bridge successfully acts as a central hub, forwarding ARP requests and ICMP traffic directly between our isolated environments-precisely how Docker allows containers to communicate on the default `docker0` bridge!
 
----
-
-# To be continued
-
 ## Outbound Connectivity: Enabling Internet Access via IP Masquerading
 
 We now have container-to-container communication working beautifully through the bridge. But what about reaching the outside world? Let's try pinging Google's DNS from inside `ns0`:
@@ -364,7 +368,7 @@ ip netns exec ns0 ip route
 # 10.0.0.0/24 dev ceth0 proto kernel scope link src 10.0.0.2
 ```
 
-There it is — `ns0` only knows about the local `10.0.0.0/24` subnet. It has absolutely no idea where to send traffic destined for anything outside that range. We need to add a **default gateway** pointing to our bridge IP (`10.0.0.1`), telling `ns0`: *"for any destination you don't have a specific route for, send it to the bridge."*
+There it is - `ns0` only knows about the local `10.0.0.0/24` subnet. It has absolutely no idea where to send traffic destined for anything outside that range. We need to add a **default gateway** pointing to our bridge IP (`10.0.0.1`), telling `ns0`: *"for any destination you don't have a specific route for, send it to the bridge."*
 
 ### 1. Add a Default Gateway
 
@@ -384,7 +388,7 @@ ip netns exec ns0 ping 8.8.8.8 -c 2
 # 2 packets transmitted, 0 received, 100% packet loss, time 1017ms
 ```
 
-Still failing — but notice the error changed! We no longer get `Network is unreachable`. The packets are being sent, but we're getting **100% packet loss**. This means the routing is partially working; the packets are leaving `ns0`, but something is dropping them along the way.
+Still failing - but notice the error changed! We no longer get `Network is unreachable`. The packets are being sent, but we're getting **100% packet loss**. This means the routing is partially working; the packets are leaving `ns0`, but something is dropping them along the way.
 
 ### 2. Debug: Trace the Packet Path
 
@@ -397,13 +401,13 @@ tcpdump -i br0 -n icmp
 # 11:56:45.372357 IP 10.0.0.2 > 8.8.8.8: ICMP echo request, id 7693, seq 2, length 64
 ```
 
-The packets are successfully arriving at `br0`. But the bridge is a Layer 2 device — it can switch frames between its ports, but it doesn't know how to **route** traffic to a completely different network like `8.8.8.8`. For that, the Linux kernel needs to **forward** the packets from `br0` out through the host's physical network interface (`enp0s1`).
+The packets are successfully arriving at `br0`. But the bridge is a Layer 2 device - it can switch frames between its ports, but it doesn't know how to **route** traffic to a completely different network like `8.8.8.8`. For that, the Linux kernel needs to **forward** the packets from `br0` out through the host's physical network interface (`enp0s1`).
 
-By default, Linux does not forward packets between network interfaces — this behavior is controlled by a kernel parameter. We need to enable it first, then configure `iptables` rules to specify exactly which traffic is allowed to pass through.
+By default, Linux does not forward packets between network interfaces - this behavior is controlled by a kernel parameter. We need to enable it first, then configure `iptables` rules to specify exactly which traffic is allowed to pass through.
 
 ### 3. Enable IP Forwarding
 
-First, we enable IP forwarding at the kernel level. This is the master switch that tells the kernel: *"yes, you are allowed to route packets between different network interfaces."* Without this, the kernel will silently drop any packet that tries to cross from one interface to another — no matter what your `iptables` rules say.
+First, we enable IP forwarding at the kernel level. This is the master switch that tells the kernel: *"yes, you are allowed to route packets between different network interfaces."* Without this, the kernel will silently drop any packet that tries to cross from one interface to another - no matter what your `iptables` rules say.
 
 ```bash
 # Enable IP forwarding (disabled by default on most Linux distros)
@@ -444,7 +448,7 @@ ip netns exec ns0 ping 8.8.8.8 -c 2
 # 2 packets transmitted, 0 received, 100% packet loss, time 1006ms
 ```
 
-**Still failing.** But we're making progress — let's dig deeper. Is the traffic actually making it all the way to the physical interface?
+**Still failing.** But we're making progress - let's dig deeper. Is the traffic actually making it all the way to the physical interface?
 
 ### 4. Debug: Check the Physical Interface
 
@@ -455,15 +459,15 @@ tcpdump -i enp0s1 -n icmp and host 8.8.8.8
 # 12:00:27.963995 IP 10.0.0.2 > 8.8.8.8: ICMP echo request, id 7713, seq 2, length 64
 ```
 
-The packets **are** being forwarded to `enp0s1` and leaving the host! So the forwarding rules are working correctly. But look carefully at the **source IP address**: it's `10.0.0.2` — the private IP of our namespace.
+The packets **are** being forwarded to `enp0s1` and leaving the host! So the forwarding rules are working correctly. But look carefully at the **source IP address**: it's `10.0.0.2` - the private IP of our namespace.
 
-Here's the problem: when these packets arrive at Google's server (`8.8.8.8`), Google tries to send the reply back to `10.0.0.2`. But `10.0.0.2` is a private, non-routable IP address — it doesn't exist on the public internet. The reply packets have nowhere to go and are simply **dropped**.
+Here's the problem: when these packets arrive at Google's server (`8.8.8.8`), Google tries to send the reply back to `10.0.0.2`. But `10.0.0.2` is a private, non-routable IP address - it doesn't exist on the public internet. The reply packets have nowhere to go and are simply **dropped**.
 
 This is the exact same reason your home devices (which typically have `192.168.x.x` addresses) can access the internet: your home router performs **Network Address Translation (NAT)**, replacing the private source IP with the router's public IP before sending the packet out.
 
 ### 5. Enable IP Masquerading (SNAT)
 
-We need to do exactly what a home router does — replace the container's private source IP with the host's IP before the packet leaves the machine. Linux provides this capability through `iptables` **MASQUERADE**, a form of Source NAT (SNAT):
+We need to do exactly what a home router does - replace the container's private source IP with the host's IP before the packet leaves the machine. Linux provides this capability through `iptables` **MASQUERADE**, a form of Source NAT (SNAT):
 
 ```bash
 # Masquerade: replace the source IP of outgoing packets from our subnet
@@ -487,21 +491,117 @@ ip netns exec ns0 ping 8.8.8.8 -c 2
 # rtt min/avg/max/mdev = 23.200/25.600/28.000/2.400 ms
 ```
 
-**It works!** Our container namespace now has full internet connectivity. This is precisely the mechanism Docker uses to give containers outbound internet access on the default bridge network — a combination of default gateway routing, IP forwarding, and `iptables` MASQUERADE.
-
-### TODO: Add image: so far, this is what we have built. Hope it makes sense and you're not getting lost.
+**It works!** Our container namespace now has full internet connectivity. This is precisely the mechanism Docker uses to give containers outbound internet access on the default bridge network - a combination of default gateway routing, IP forwarding, and `iptables` MASQUERADE.
 
 ## Ingress Traffic: Port Forwarding from Host to Container
-Demonstrate using Destination NAT (DNAT) in `iptables` to expose a container's port, demystifying how `docker run -p` works under the hood.
+
+Our containers can now talk to each other and reach the internet. But networking is a two-way street - what if we want **external clients** to reach a service running *inside* a container? This is the final piece of the puzzle.
+
+### 1. Deploy a Web Server Inside `ns0`
+
+Let's simulate a real-world scenario by running a simple HTTP server inside our namespace:
+
+```bash
+# Start a basic HTTP server on port 8080 inside ns0
+ip netns exec ns0 python3 -m http.server --bind 10.0.0.2 8080 &
+```
+
+### 2. Access from the Host via Bridge IP
+
+Since the host is directly connected to the bridge (`br0`) on the same `10.0.0.0/16` subnet, we can reach the container's IP directly:
+
+```bash
+curl 10.0.0.2:8080
+
+# <!DOCTYPE HTML>
+# <html lang="en">
+# <head>
+#   <meta charset="utf-8">
+#   <title>Directory listing for /</title>
+# ...
+```
+
+It works! The host can reach the web server through the bridge. But here's the thing - only the host knows about `10.0.0.2`. What about external users who want to access this web server?
+
+### 3. The Problem: External Clients Can't Reach Private IPs
+
+An external client only knows the **host's IP address** (e.g., `192.168.64.5`). They have no idea `10.0.0.2` exists - it's a private address living inside an isolated namespace. If someone tries to connect to the host on port `8080`, nothing is listening there:
+
+```bash
+curl 192.168.64.5:8080
+
+# curl: (7) Failed to connect to 192.168.64.5 port 8080 after 0 ms: Couldn't connect to server
+```
+
+We need a way to tell the host: *"when you receive traffic on port `8080`, forward it to `10.0.0.2:8080` inside `ns0`."* This is called **Destination NAT (DNAT)** - the reverse of the MASQUERADE (Source NAT) we set up earlier.
+
+### 4. Add DNAT Rules for Port Forwarding
+
+We need two DNAT rules because traffic takes different paths through `iptables` depending on where it originates:
+
+```bash
+# For external traffic (from other machines) - enters via PREROUTING chain
+iptables -t nat -A PREROUTING -d 192.168.64.5 -p tcp --dport 8080 -j DNAT --to-destination 10.0.0.2:8080
+
+# For local traffic (from the host itself) - enters via OUTPUT chain
+iptables -t nat -A OUTPUT -d 192.168.64.5 -p tcp --dport 8080 -j DNAT --to-destination 10.0.0.2:8080
+```
+
+Why two rules? When an external client sends a packet to our host, it passes through the `PREROUTING` chain. But when we `curl` from the host itself, the packet is locally generated and goes through the `OUTPUT` chain instead - completely bypassing `PREROUTING`. We need both to cover all cases.
+
+### 5. Verify: Access the Container Service via Host IP
+
+```bash
+curl 192.168.64.5:8080
+
+# <!DOCTYPE HTML>
+# <html lang="en">
+# <head>
+#   <meta charset="utf-8">
+#   <title>Directory listing for /</title>
+# ...
+```
+
+**It works!** External clients can now reach our containerized web server by connecting to the host's IP on port `8080`. The host transparently rewrites the destination, forwards the packet into the namespace via the bridge, and returns the response - the client never knows it's talking to an isolated process.
+
+**This is exactly what `docker run -p 8080:80` does under the hood.** When you publish a port in Docker, it creates DNAT rules in `iptables` to forward traffic from the host port to the container's private IP and port. No magic - just the same kernel features we've been using throughout this entire article.
 
 ## Connecting the Dots: The 3 Built-in Docker Networks
-Briefly map the manual concepts just built to Docker's three default networking modes: `none`, `host`, and `bridge`.
 
-## From Docker to Kubernetes: Pod Networking Basics
-Briefly connect the dots by explaining that a Kubernetes Pod is simply a group of containers sharing a single network namespace and utilizing similar bridge mechanisms.
+If you've made it this far - congratulations, you already understand how Docker networking works! Everything Docker does is built on top of the exact same Linux primitives we've been configuring by hand. Let's map what we've done to Docker's three default network modes:
 
-## Up Next in Part 2: Automating with Kubernetes CNI
-Tease the next article by stating that Container Network Interface (CNI) plugins exist purely to automate all these manual namespace, bridge, and routing configurations across a large-scale, multi-node cluster.
+### `none` - Total Isolation
+```bash
+docker run --network none alpine
+```
+Remember the very first step when we created `ns0`? A brand-new namespace with no interfaces, no routes, nothing - completely cut off from the world. That's Docker's `none` network. The container gets its own network namespace, but Docker doesn't configure any networking for it. Useful when you want a container with absolutely no network access.
+
+### `host` - No Isolation
+```bash
+docker run --network host nginx
+```
+This is the opposite extreme. The container **skips creating a network namespace entirely** and shares the host's root network namespace directly. No bridge, no veth pairs, no NAT - the container's processes bind directly to the host's network interfaces. It's fast (zero network overhead), but there's no isolation: port conflicts between containers become your problem.
+
+### `bridge` - The Default (What We Built!)
+```bash
+docker run -p 8080:80 nginx
+```
+This is Docker's default network mode, and it's **exactly** what we've been building step by step throughout this entire article:
+
+1. **Create a network namespace** for the container → we did this with `ip netns add`
+2. **Create a veth pair** and attach one end to the namespace, the other to a bridge → we did this with `ip link add` and `ip link set master br0`
+3. **Assign an IP address** inside the namespace → we did this with `ip addr add`
+4. **Set the bridge as default gateway** → we did this with `ip route add default`
+5. **Enable outbound internet via MASQUERADE** → we did this with `iptables -t nat POSTROUTING`
+6. **Expose ports via DNAT** → we did this with `iptables -t nat PREROUTING`
+
+Docker simply automates all of these steps. When you run `docker run`, the Docker daemon (and its `libnetwork` library) executes the exact same sequence of `ip` and `iptables` commands behind the scenes. The bridge you see as `docker0` on any Docker host is functionally identical to the `br0` we created manually.
+
+## What's Next?
+
+That's everything for Part 1. Hope you enjoyed this deep dive, we built a full container network from scratch using nothing but Linux primitives.
+
+In **Part 2**, we'll move up one layer into **Kubernetes networking and CNI**, still low-level, but now solving the much harder problem of containers talking **across nodes**.
 
 ## References
 

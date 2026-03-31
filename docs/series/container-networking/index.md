@@ -9,7 +9,7 @@ Demystifying container isolation by diving deep into low-level Linux networking 
 
 ## Series Outline
 
-### [Part 1: Network Namespaces](/series/container-networking/container-networking-1)
+### [Part 1: Building Container Networks from Scratch](/series/container-networking/container-networking-1)
 Building a container network from scratch using Linux Network Namespaces, veth pairs, Linux Bridges, and iptables (Masquerading & Port Forwarding).
 
 ### Part 2: Kubernetes & CNI (Coming Soon)
