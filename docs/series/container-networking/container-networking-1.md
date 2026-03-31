@@ -347,7 +347,149 @@ The bridge successfully acts as a central hub, forwarding ARP requests and ICMP 
 # To be continued
 
 ## Outbound Connectivity: Enabling Internet Access via IP Masquerading
-Explain the need for Source NAT (IP Masquerading) and provide the `iptables` rule to give the container internet access.
+
+We now have container-to-container communication working beautifully through the bridge. But what about reaching the outside world? Let's try pinging Google's DNS from inside `ns0`:
+
+```bash
+ip netns exec ns0 ping 8.8.8.8
+
+# ping: connect: Network is unreachable
+```
+
+No luck. The error message `Network is unreachable` tells us the kernel couldn't even find a route for this destination. Let's inspect the routing table inside `ns0` to understand why:
+
+```bash
+ip netns exec ns0 ip route
+
+# 10.0.0.0/24 dev ceth0 proto kernel scope link src 10.0.0.2
+```
+
+There it is — `ns0` only knows about the local `10.0.0.0/24` subnet. It has absolutely no idea where to send traffic destined for anything outside that range. We need to add a **default gateway** pointing to our bridge IP (`10.0.0.1`), telling `ns0`: *"for any destination you don't have a specific route for, send it to the bridge."*
+
+### 1. Add a Default Gateway
+
+```bash
+# Set the bridge as the default gateway for ns0
+ip netns exec ns0 ip route add default via 10.0.0.1
+```
+
+Let's try the ping again:
+
+```bash
+ip netns exec ns0 ping 8.8.8.8 -c 2
+
+# PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+#
+# --- 8.8.8.8 ping statistics ---
+# 2 packets transmitted, 0 received, 100% packet loss, time 1017ms
+```
+
+Still failing — but notice the error changed! We no longer get `Network is unreachable`. The packets are being sent, but we're getting **100% packet loss**. This means the routing is partially working; the packets are leaving `ns0`, but something is dropping them along the way.
+
+### 2. Debug: Trace the Packet Path
+
+Let's use `tcpdump` to trace exactly where the packets are going. First, let's check if traffic is arriving at the bridge:
+
+```bash
+tcpdump -i br0 -n icmp
+
+# 11:56:44.370536 IP 10.0.0.2 > 8.8.8.8: ICMP echo request, id 7693, seq 1, length 64
+# 11:56:45.372357 IP 10.0.0.2 > 8.8.8.8: ICMP echo request, id 7693, seq 2, length 64
+```
+
+The packets are successfully arriving at `br0`. But the bridge is a Layer 2 device — it can switch frames between its ports, but it doesn't know how to **route** traffic to a completely different network like `8.8.8.8`. For that, the Linux kernel needs to **forward** the packets from `br0` out through the host's physical network interface (`enp0s1`).
+
+By default, Linux does not forward packets between network interfaces — this behavior is controlled by a kernel parameter. We need to enable it first, then configure `iptables` rules to specify exactly which traffic is allowed to pass through.
+
+### 3. Enable IP Forwarding
+
+First, we enable IP forwarding at the kernel level. This is the master switch that tells the kernel: *"yes, you are allowed to route packets between different network interfaces."* Without this, the kernel will silently drop any packet that tries to cross from one interface to another — no matter what your `iptables` rules say.
+
+```bash
+# Enable IP forwarding (disabled by default on most Linux distros)
+sysctl -w net.ipv4.ip_forward=1
+
+# net.ipv4.ip_forward = 1
+```
+
+> **Note:** This change is temporary and will be lost after a reboot. To make it permanent, add `net.ipv4.ip_forward=1` to `/etc/sysctl.conf`.
+
+Next, we add two `FORWARD` rules in `iptables` to control which traffic is allowed to be forwarded:
+
+```bash
+# Allow outbound: forward traffic from br0 to the physical interface
+iptables -A FORWARD -i br0 -o enp0s1 -j ACCEPT
+
+# Allow return traffic: only permit replies to connections initiated from inside
+iptables -A FORWARD -i enp0s1 -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+```
+
+**Verify** the rules are in place:
+
+```bash
+iptables -S | grep br0
+
+# -A FORWARD -i br0 -o enp0s1 -j ACCEPT
+# -A FORWARD -i enp0s1 -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+```
+
+Let's try the ping once more:
+
+```bash
+ip netns exec ns0 ping 8.8.8.8 -c 2
+
+# PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+#
+# --- 8.8.8.8 ping statistics ---
+# 2 packets transmitted, 0 received, 100% packet loss, time 1006ms
+```
+
+**Still failing.** But we're making progress — let's dig deeper. Is the traffic actually making it all the way to the physical interface?
+
+### 4. Debug: Check the Physical Interface
+
+```bash
+tcpdump -i enp0s1 -n icmp and host 8.8.8.8
+
+# 12:00:26.941597 IP 10.0.0.2 > 8.8.8.8: ICMP echo request, id 7713, seq 1, length 64
+# 12:00:27.963995 IP 10.0.0.2 > 8.8.8.8: ICMP echo request, id 7713, seq 2, length 64
+```
+
+The packets **are** being forwarded to `enp0s1` and leaving the host! So the forwarding rules are working correctly. But look carefully at the **source IP address**: it's `10.0.0.2` — the private IP of our namespace.
+
+Here's the problem: when these packets arrive at Google's server (`8.8.8.8`), Google tries to send the reply back to `10.0.0.2`. But `10.0.0.2` is a private, non-routable IP address — it doesn't exist on the public internet. The reply packets have nowhere to go and are simply **dropped**.
+
+This is the exact same reason your home devices (which typically have `192.168.x.x` addresses) can access the internet: your home router performs **Network Address Translation (NAT)**, replacing the private source IP with the router's public IP before sending the packet out.
+
+### 5. Enable IP Masquerading (SNAT)
+
+We need to do exactly what a home router does — replace the container's private source IP with the host's IP before the packet leaves the machine. Linux provides this capability through `iptables` **MASQUERADE**, a form of Source NAT (SNAT):
+
+```bash
+# Masquerade: replace the source IP of outgoing packets from our subnet
+# with the host's IP address on the outbound interface
+iptables -t nat -A POSTROUTING -s 10.0.0.0/16 -o enp0s1 -j MASQUERADE
+```
+
+This rule tells the kernel: *"For any packet originating from the `10.0.0.0/16` subnet that is about to leave through `enp0s1`, rewrite its source IP to the host's own IP address. When the reply comes back, automatically reverse the translation and deliver it to the original sender."*
+
+Now let's test:
+
+```bash
+ip netns exec ns0 ping 8.8.8.8 -c 2
+
+# PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+# 64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=28.0 ms
+# 64 bytes from 8.8.8.8: icmp_seq=2 ttl=117 time=23.2 ms
+#
+# --- 8.8.8.8 ping statistics ---
+# 2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+# rtt min/avg/max/mdev = 23.200/25.600/28.000/2.400 ms
+```
+
+**It works!** Our container namespace now has full internet connectivity. This is precisely the mechanism Docker uses to give containers outbound internet access on the default bridge network — a combination of default gateway routing, IP forwarding, and `iptables` MASQUERADE.
+
+### TODO: Add image: so far, this is what we have built. Hope it makes sense and you're not getting lost.
 
 ## Ingress Traffic: Port Forwarding from Host to Container
 Demonstrate using Destination NAT (DNAT) in `iptables` to expose a container's port, demystifying how `docker run -p` works under the hood.
