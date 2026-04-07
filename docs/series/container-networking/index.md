@@ -5,7 +5,7 @@ description: "Demystifying container isolation by diving deep into Linux Network
 
 # Container Networking Under the Hood
 
-Demystifying container isolation by diving deep into low-level Linux networking features, namespaces, cgroups, and then building up to understand modern Kubernetes CNIs.
+Demystifying container isolation by diving deep into low-level Linux networking features, namespaces, and then building up to understand modern Kubernetes CNIs.
 
 ## Series Outline
 
