@@ -60,7 +60,7 @@ Our goal now is to step outside this default environment and create a *new*, com
 ## Building a Network Namespace
 
 Let's get our hands dirty and build what Docker or Kubernetes does under the hood.
-![Linux Netowrk Namespace - ns0](/images/container-networking/ns0.png)
+![Linux Network Namespace - ns0](/images/container-networking/ns0.png)
 
 ### 1. Create a Network Namespace (`ns0`)
 First, we create our isolated environment.
@@ -180,7 +180,8 @@ sudo ip netns exec ns1 ip link set lo up
 ```
 
 So now, we have two isolated network namespaces, `ns0` and `ns1`, and both are independently connected to the host via their own veth pairs. 
-![Linux Netowrk Namespace - ns0 ns1](/images/container-networking/ns0-ns1.png)
+
+![Linux Network Namespace - 2 Namespaces](/images/container-networking/2namespaces.png)
 
 We logically expect that `ns0` and `ns1` can both ping the host. Let's verify this assumption.
 
@@ -241,12 +242,12 @@ Instead of tangled direct connections, we simply plug every namespace into a cen
 
 ## Setting Up the Linux Bridge, Container to container networking
 
-![Linux Network Namespace - Bridge](/images/container-networking/linux-bridge.png)
+![Linux Network Namespace - Bridge](/images/container-networking/bridge.png)
 
 Let's tear down our old direct connections and build a proper, scalable bridged network.
 
 ```bash
-# let clean up the old interfaces
+# let's clean up the old interfaces
 ip netns delete ns0
 ip netns delete ns1
 ```
@@ -351,6 +352,10 @@ tcpdump -i br0
 The bridge successfully acts as a central hub, forwarding ARP requests and ICMP traffic directly between our isolated environments-precisely how Docker allows containers to communicate on the default `docker0` bridge!
 
 ## Outbound Connectivity: Enabling Internet Access via IP Masquerading
+
+![Linux Network Namespace - SNAT](/images/container-networking/snat.png)
+
+Don't worry if you don't fully understand this diagram yet; this is exactly what we're going to build in this section.
 
 We now have container-to-container communication working beautifully through the bridge. But what about reaching the outside world? Let's try pinging Google's DNS from inside `ns0`:
 
@@ -494,6 +499,9 @@ ip netns exec ns0 ping 8.8.8.8 -c 2
 **It works!** Our container namespace now has full internet connectivity. This is precisely the mechanism Docker uses to give containers outbound internet access on the default bridge network - a combination of default gateway routing, IP forwarding, and `iptables` MASQUERADE.
 
 ## Ingress Traffic: Port Forwarding from Host to Container
+
+![Linux Network Namespace - DNAT](/images/container-networking/dnat.png)
+This diagram illustrates our complete network architecture after adding the final components for inbound traffic.
 
 Our containers can now talk to each other and reach the internet. But networking is a two-way street - what if we want **external clients** to reach a service running *inside* a container? This is the final piece of the puzzle.
 
