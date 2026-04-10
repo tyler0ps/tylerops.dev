@@ -12,7 +12,7 @@ Demystifying container isolation by diving deep into low-level Linux networking 
 ### [Part 1: Building Container Networks from Scratch](/series/container-networking/container-networking-1)
 Building a container network from scratch using Linux Network Namespaces, veth pairs, Linux Bridges, and iptables (Masquerading & Port Forwarding).
 
-### Part 2: Kubernetes & CNI (Coming Soon)
+### [Part 2: From Linux Namespaces to Kubernetes: Unpacking the CNI](/series/container-networking/part2-k8s-cni)
 How Kubernetes handles pod networking, introducing the Container Network Interface (CNI), and how it scales our low-level Linux setup across a multi-node cluster.
 
 ### Part 3: AWS VPC CNI (Coming Soon)

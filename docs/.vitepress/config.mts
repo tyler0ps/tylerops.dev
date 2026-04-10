@@ -51,6 +51,7 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/series/container-networking/' },
             { text: 'Part 1: Building Container Networks from Scratch', link: '/series/container-networking/container-networking-1' },
+            { text: 'Part 2: From Linux Namespaces to Kubernetes: Unpacking the CNI', link: '/series/container-networking/part2-k8s-cni' },
           ]
         }
       ],
