@@ -9,8 +9,12 @@ resource "aws_cloudfront_function" "url_rewrite" {
       var request = event.request;
       var uri = request.uri;
 
-      // If URI has no file extension and doesn't end with /, append .html
-      if (!uri.endsWith('/') && !uri.split('/').pop().includes('.')) {
+      // If URI ends with /, serve index.html from that directory
+      if (uri.endsWith('/')) {
+        request.uri = uri + 'index.html';
+      }
+      // If URI has no file extension, append .html (VitePress cleanUrls)
+      else if (!uri.split('/').pop().includes('.')) {
         request.uri = uri + '.html';
       }
 
