@@ -663,7 +663,7 @@ I hope this journey from the low layers of Linux networking up to the Kubernetes
 
 I haven't quite decided yet! This post is getting pretty lengthy as it is. I originally planned to dive into some production-grade CNI plugins right here, but that quickly felt like a recipe for putting you to sleep halfway through reading. 
 
-So, we'll save that for another time. Stay tuned—I will definitely be exploring tools like Calico or Cilium in a future post.
+So, we'll save that for another time. Stay tuned, I will definitely be exploring tools like Calico or Cilium in a future post.
 
 ## References
 
