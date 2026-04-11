@@ -13,7 +13,7 @@ Demystifying container isolation by diving deep into low-level Linux networking 
 Building a container network from scratch using Linux Network Namespaces, veth pairs, Linux Bridges, and iptables (Masquerading & Port Forwarding).
 
 ### [Part 2: From Linux Namespaces to Kubernetes: Unpacking the CNI](/series/container-networking/part2-k8s-cni)
-How Kubernetes handles pod networking, introducing the Container Network Interface (CNI), and how it scales our low-level Linux setup across a multi-node cluster.
+In this part, we will walk through the Kubernetes networking model, dive deep into the CNI, and actually build our own CNI plugin to see how it works under the hood.
 
 ### Part 3: AWS VPC CNI (Coming Soon)
 Deep dive into Amazon EKS's default VPC CNI plugin, exploring secondary IPs, ENIs, and traffic routing in AWS.
