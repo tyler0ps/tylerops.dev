@@ -8,11 +8,13 @@ description: Welcome to my blog!
 **An ... Engineer** | Hanoi, Vietnam
 
 ## Hey there!
+
 Hi, I'm Tyler. Welcome to my blog!
 
-With 10+ years in software engineering and 5+ years in infrastructure architecture, I design scalable, secure, and cost-optimized platforms. My expertise spans from mobile superapps to high-traffic microservices, seamlessly orchestrating workloads across AWS, Kubernetes, and hybrid on-premise environments. I am also a **CNCF Kubestronaut** and an **AWS Certified Solutions Architect - Professional**.
+10+ years in software engineering, 5+ in infrastructure architecture. I've worked on mobile superapps and microservices, across AWS, Kubernetes, and hybrid on-premise setups. **CNCF Kubestronaut** and **AWS Certified Solutions Architect - Professional**.
 
-But beyond the high-level architectures... while everyone is talking about AI, here we still type `sysctl`, `journalctl`, `cat`, `grep`, `ip route`... guess and change some kernel configurations then hope it works. I am not entirely sure if it holds value to the masses anymore, but this is the way. This space is where I hide from the noise of the world, dig into how things actually work under the hood, and satisfy my own curiosity.
+But beyond the high-level architectures... while everyone is talking about AI, here we still type `sysctl`, `journalctl`, `cat`, `grep`, `ip route`... guess and change some kernel configurations then hope it works. I am not entirely sure if it holds value to others anymore, but this is the way. This space is where I dig into how things actually work under the hood, and pay respect to people who built them.
+
 ## Beyond Work
 
 Endurance sports enthusiast - completed a half marathon (21km) in under 2 hours and occasionally swims 2km. I believe consistency is a journey, not a destination.
