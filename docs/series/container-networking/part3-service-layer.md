@@ -1,0 +1,1 @@
+How does a Service get a stable IP? How does it get a stable DNS name? Build a mini kube-proxy that watches EndpointSlices and writes DNAT rules into iptables by hand. Then follow a DNS query through CoreDNS with `tcpdump`. Two mechanisms, one purpose: stable addressing on top of ephemeral pods.

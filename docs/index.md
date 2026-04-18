@@ -7,11 +7,11 @@ hero:
   tagline: "Where you may find helpful technical writings on Linux, Containers, AWS, and everything under the hood."
   actions:
     - theme: brand
-      text: View Projects
-      link: /projects/
-    - theme: alt
       text: Container Series
       link: /series/container-networking/
+    - theme: alt
+      text: View Projects
+      link: /projects/
     - theme: alt
       text: About Me
       link: /about

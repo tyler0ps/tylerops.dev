@@ -1,0 +1,1 @@
+Who is allowed to talk to whom? Apply a `NetworkPolicy` and read the iptables chains Calico generates behind the scenes. No code - just the real output of a production CNI, explained rule by rule.

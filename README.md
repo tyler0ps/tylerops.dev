@@ -8,7 +8,6 @@ Source code for [https://tylerops.dev](https://tylerops.dev) - Personal website 
 - **Hosting**: AWS S3 + CloudFront
 - **SSL**: AWS ACM
 - **DNS**: AWS Route53
-- **Infrastructure**: Terraform
 - **CI/CD**: GitHub Actions (OIDC)
 
 ## Development
@@ -29,22 +28,12 @@ npm run preview
 
 ## Deployment
 
-### Infrastructure Setup (One-time)
-
-```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
-```
-
-After applying, note the outputs:
-- `github_actions_role_arn` - Add as `AWS_ROLE_ARN` in GitHub repo variables
-- `cloudfront_distribution_id` - Add as `CLOUDFRONT_DISTRIBUTION_ID` in GitHub repo variables
-
-### Automatic Deployment
-
 Push to `main` branch with changes in `docs/**` triggers automatic deployment via GitHub Actions.
+
+The workflow expects these GitHub repo variables to be set:
+- `AWS_ROLE_ARN` - IAM role for OIDC auth
+- `S3_BUCKET` - Target S3 bucket name
+- `CLOUDFRONT_DISTRIBUTION_ID` - CloudFront distribution to invalidate
 
 ## Project Structure
 
@@ -57,7 +46,6 @@ Push to `main` branch with changes in `docs/**` triggers automatic deployment vi
 │   └── projects/           # Projects page
 ├── source/                 # DevOps materials (Terraform/K8s code)
 │   └── eks-karpenter/      # EKS + Karpenter setup
-├── terraform/              # Website infrastructure (S3, CloudFront, Route53)
 └── .github/workflows/      # CI/CD pipelines
 ```
 
