@@ -11,7 +11,7 @@ description: Senior DevOps Engineer with 8+ years of experience in cloud infrast
 
 Hi, I'm Tyler, a Senior DevOps Engineer bridging the gap between Dev and Ops. With almost 10 years in software engineering and 5+ years deep in cloud infrastructure, I'm passionate about building reliable platforms and unraveling low-level systems.
 
-I am an **AWS Certified Solutions Architect – Professional** and a **Certified Kubernetes Administrator (CKA)**. I created this space to document my technical journey, share deep dives into infrastructure, and connect with fellow engineers.
+I am a **CNCF Kubestronaut** and **AWS Certified Solutions Architect - Professional**. I created this space to document my technical journey, share deep dives into infrastructure, and connect with fellow engineers.
 
 ## Beyond Work
 
@@ -20,4 +20,5 @@ Endurance sports enthusiast - completed a half marathon (21km) in under 2 hours 
 ## Let's Connect
 
 - **GitHub**: [github.com/tyler0ps](https://github.com/tyler0ps)
-- **LinkedIn**: [linkedin.com/in/tylerops](https://linkedin.com/in/tylerops) — _detailed work experience_
+- **LinkedIn**: [linkedin.com/in/tylerops](https://linkedin.com/in/tylerops) - _detailed work experience_
+- **Credly**: [credly.com/users/thai-nong-hoang](https://www.credly.com/users/thai-nong-hoang/badges) - _certifications_
